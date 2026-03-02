@@ -3,15 +3,15 @@ package domain
 type EventType int
 
 const (
-	EventMatchCreated EventType = iota
-	EventPlayerJoined
-	EventGameStarted
-	EventCardOpened
-	EventShapePlaced
-	EventTurnAdvanced
-	EventSeasonEnded
-	EventScoringApplied
-	EventGameFinished
+	EventTypeMatchCreated EventType = iota
+	EventTypePlayerJoined
+	EventTypeGameStarted
+	EventTypeCardOpened
+	EventTypeShapePlaced
+	EventTypeTurnAdvanced
+	EventTypeSeasonEnded
+	EventTypeScoringApplied
+	EventTypeGameFinished
 )
 
 func (e EventType) String() string {
@@ -30,4 +30,31 @@ func (e EventType) String() string {
 
 type Event interface {
 	EventType() EventType
+}
+
+type EventMatchCreated struct {
+	MatchID string
+	Seats   []Seat
+}
+
+func (e EventMatchCreated) EventType() EventType {
+	return EventTypeMatchCreated
+}
+
+type EventPlayerJoined struct {
+	MatchID    string
+	PlayerID   PlayerID
+	SeatNumber int
+}
+
+func (e EventPlayerJoined) EventType() EventType {
+	return EventTypePlayerJoined
+}
+
+type EventGameStarted struct {
+	MatchID string
+}
+
+func (e EventGameStarted) EventType() EventType {
+	return EventTypeGameStarted
 }
