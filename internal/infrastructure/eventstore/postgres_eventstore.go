@@ -15,21 +15,17 @@ func NewPostgresEventStore(conn *pgx.Conn) *PostgresEventStore {
 	return &PostgresEventStore{conn: conn}
 }
 
-func (s *PostgresEventStore) Apply(event domain.Event) error {
+func (s *PostgresEventStore) Append(ctx context.Context, event domain.Event) error {
 	return nil
 }
 
-func (s *PostgresEventStore) GetEvents(matchID string) ([]domain.Event, error) {
+func (s *PostgresEventStore) Load(ctx context.Context, matchID string) ([]domain.Event, error) {
 	return nil, nil
 }
 
-func (storedEvent StoredEvent) toDomainEvent() domain.Event {
-	return nil
-}
-
-func (s *PostgresEventStore) saveEvent(event StoredEvent) error {
+func (s *PostgresEventStore) saveEvent(ctx context.Context, event StoredEvent) error {
 	_, err := s.conn.Exec(
-		context.Background(),
+		ctx,
 		`
     INSERT INTO events (match_id, version, type, data, metadata, created_at)
     VALUES ($1, $2, $3, $4, $5, $6)
@@ -39,11 +35,13 @@ func (s *PostgresEventStore) saveEvent(event StoredEvent) error {
 	return err
 }
 
-func (s *PostgresEventStore) getEvents(matchID string) ([]StoredEvent, error) {
+func (s *PostgresEventStore) getEvents(ctx context.Context, matchID string) ([]StoredEvent, error) {
 	rows, err := s.conn.Query(
-		context.Background(),
+		ctx,
 		`
-    SELECT id, match_id, version, type, data, metadata, created_at FROM events WHERE match_id = $1
+    SELECT id, match_id, version, type, data, metadata, created_at FROM events
+    WHERE match_id = $1
+    ORDER BY version ASC
     `,
 		matchID,
 	)
@@ -65,5 +63,4 @@ func (s *PostgresEventStore) getEvents(matchID string) ([]StoredEvent, error) {
 		return nil, err
 	}
 	return events, nil
-
 }

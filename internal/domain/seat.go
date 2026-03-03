@@ -2,6 +2,6 @@ package domain
 
 type Seat struct {
 	SeatNumber int
-	Player     PlayerID
+	PlayerID   PlayerID
 	Score      int
 }
