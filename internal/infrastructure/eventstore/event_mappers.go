@@ -30,8 +30,12 @@ var toDomainEventMapperRegistry = map[domain.EventType]func(StoredEvent) (domain
 		if err != nil {
 			return nil, err
 		}
+		matchID, err := domain.ParseMatchID(storedEvent.MatchID)
+		if err != nil {
+			return nil, err
+		}
 		return &domain.EventMatchCreated{
-			MatchID:    storedEvent.MatchID,
+			MatchID:    matchID,
 			SeatsCount: event.SeatsCount,
 		}, nil
 	},
@@ -45,15 +49,23 @@ var toDomainEventMapperRegistry = map[domain.EventType]func(StoredEvent) (domain
 		if err != nil {
 			return nil, err
 		}
+		matchID, err := domain.ParseMatchID(storedEvent.MatchID)
+		if err != nil {
+			return nil, err
+		}
 		return &domain.EventPlayerJoined{
-			MatchID:    storedEvent.MatchID,
+			MatchID:    matchID,
 			PlayerID:   playerID,
 			SeatNumber: event.SeatNumber,
 		}, nil
 	},
 	domain.EventTypeGameStarted: func(storedEvent StoredEvent) (domain.Event, error) {
+		matchID, err := domain.ParseMatchID(storedEvent.MatchID)
+		if err != nil {
+			return nil, err
+		}
 		return &domain.EventGameStarted{
-			MatchID: storedEvent.MatchID,
+			MatchID: matchID,
 		}, nil
 	},
 }
@@ -71,8 +83,9 @@ var toStoredEventMapperRegistry = map[domain.EventType]func(domain.Event) (Store
 			return StoredEvent{}, err
 		}
 		return StoredEvent{
-			Type: domainEvent.EventType(),
-			Data: data,
+			Type:    domainEvent.EventType(),
+			MatchID: domainEvent.MatchID.String(),
+			Data:    data,
 		}, nil
 	},
 	domain.EventTypePlayerJoined: func(event domain.Event) (StoredEvent, error) {
@@ -88,8 +101,9 @@ var toStoredEventMapperRegistry = map[domain.EventType]func(domain.Event) (Store
 			return StoredEvent{}, err
 		}
 		return StoredEvent{
-			Type: domainEvent.EventType(),
-			Data: data,
+			Type:    domainEvent.EventType(),
+			MatchID: domainEvent.MatchID.String(),
+			Data:    data,
 		}, nil
 	},
 	domain.EventTypeGameStarted: func(event domain.Event) (StoredEvent, error) {
@@ -98,7 +112,8 @@ var toStoredEventMapperRegistry = map[domain.EventType]func(domain.Event) (Store
 			return StoredEvent{}, errors.New("invalid domain event type")
 		}
 		return StoredEvent{
-			Type: domainEvent.EventType(),
+			Type:    domainEvent.EventType(),
+			MatchID: domainEvent.MatchID.String(),
 		}, nil
 	},
 }

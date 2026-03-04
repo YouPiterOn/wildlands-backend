@@ -34,7 +34,7 @@ type Event interface {
 }
 
 type EventMatchCreated struct {
-	MatchID    string
+	MatchID    MatchID
 	SeatsCount int
 }
 
@@ -49,7 +49,7 @@ func (e EventMatchCreated) Apply(match *Match) (*Match, error) {
 }
 
 type EventPlayerJoined struct {
-	MatchID    string
+	MatchID    MatchID
 	PlayerID   PlayerID
 	SeatNumber int
 }
@@ -64,7 +64,7 @@ func (e EventPlayerJoined) Apply(match *Match) (*Match, error) {
 }
 
 type EventGameStarted struct {
-	MatchID string
+	MatchID MatchID
 }
 
 func (e EventGameStarted) EventType() EventType {

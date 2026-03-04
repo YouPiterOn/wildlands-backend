@@ -3,28 +3,54 @@ package eventstore
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"youpiteron.dev/wildlands-backend/internal/domain"
 )
 
 type PostgresEventStore struct {
-	conn *pgx.Conn
+	pool *pgxpool.Pool
 }
 
-func NewPostgresEventStore(conn *pgx.Conn) *PostgresEventStore {
-	return &PostgresEventStore{conn: conn}
+func NewPostgresEventStore(pool *pgxpool.Pool) *PostgresEventStore {
+	return &PostgresEventStore{pool: pool}
 }
 
-func (s *PostgresEventStore) Append(ctx context.Context, event domain.Event) error {
+func (s *PostgresEventStore) Append(ctx context.Context, events ...domain.Event) error {
+	for _, event := range events {
+		storedEvent, err := s.DomainEventToStoredEvent(event)
+		if err != nil {
+			return err
+		}
+		err = s.saveEvent(ctx, storedEvent)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (s *PostgresEventStore) Load(ctx context.Context, matchID string) ([]domain.Event, error) {
-	return nil, nil
+	storedEvents, err := s.getEvents(ctx, matchID)
+	if err != nil {
+		return nil, err
+	}
+	events := make([]domain.Event, len(storedEvents))
+	for i, storedEvent := range storedEvents {
+		events[i], err = s.StoredEventToDomainEvent(storedEvent)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return events, nil
 }
 
 func (s *PostgresEventStore) saveEvent(ctx context.Context, event StoredEvent) error {
-	_, err := s.conn.Exec(
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	_, err = conn.Exec(
 		ctx,
 		`
     INSERT INTO events (match_id, version, type, data, metadata, created_at)
@@ -36,7 +62,12 @@ func (s *PostgresEventStore) saveEvent(ctx context.Context, event StoredEvent) e
 }
 
 func (s *PostgresEventStore) getEvents(ctx context.Context, matchID string) ([]StoredEvent, error) {
-	rows, err := s.conn.Query(
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+	rows, err := conn.Query(
 		ctx,
 		`
     SELECT id, match_id, version, type, data, metadata, created_at FROM events

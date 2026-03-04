@@ -1,5 +1,15 @@
 package domain
 
+type MatchID string
+
+func (id MatchID) String() string {
+	return string(id)
+}
+
+func ParseMatchID(s string) (MatchID, error) {
+	return MatchID(s), nil
+}
+
 type MatchState int
 
 const (
@@ -17,7 +27,7 @@ func (s MatchState) String() string {
 }
 
 type Match struct {
-	ID          string
+	ID          MatchID
 	State       MatchState
 	Seats       []Seat
 	CurrentTurn int
