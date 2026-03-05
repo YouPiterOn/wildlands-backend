@@ -34,7 +34,8 @@ type Event interface {
 }
 
 type EventMatchCreated struct {
-	MatchID MatchID
+	MatchID    MatchID
+	SeatsCount int
 }
 
 func (e EventMatchCreated) EventType() EventType {
@@ -42,6 +43,7 @@ func (e EventMatchCreated) EventType() EventType {
 }
 
 func (e EventMatchCreated) Apply(match *Match) (*Match, error) {
+	match.SeatsCount = e.SeatsCount
 	match.State = MatchStateCreated
 	return match, nil
 }

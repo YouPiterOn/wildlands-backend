@@ -29,6 +29,7 @@ func (s MatchState) String() string {
 type Match struct {
 	ID          MatchID
 	State       MatchState
+	SeatsCount  int
 	Seats       []Seat
 	CurrentTurn int
 }
