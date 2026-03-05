@@ -34,8 +34,7 @@ type Event interface {
 }
 
 type EventMatchCreated struct {
-	MatchID    MatchID
-	SeatsCount int
+	MatchID MatchID
 }
 
 func (e EventMatchCreated) EventType() EventType {
@@ -43,15 +42,13 @@ func (e EventMatchCreated) EventType() EventType {
 }
 
 func (e EventMatchCreated) Apply(match *Match) (*Match, error) {
-	match.Seats = make([]Seat, e.SeatsCount)
 	match.State = MatchStateCreated
 	return match, nil
 }
 
 type EventPlayerJoined struct {
-	MatchID    MatchID
-	PlayerID   PlayerID
-	SeatNumber int
+	MatchID  MatchID
+	PlayerID PlayerID
 }
 
 func (e EventPlayerJoined) EventType() EventType {
@@ -59,7 +56,11 @@ func (e EventPlayerJoined) EventType() EventType {
 }
 
 func (e EventPlayerJoined) Apply(match *Match) (*Match, error) {
-	match.Seats[e.SeatNumber].PlayerID = e.PlayerID
+	match.Seats = append(match.Seats, Seat{
+		SeatNumber: len(match.Seats),
+		PlayerID:   e.PlayerID,
+		Score:      0,
+	})
 	return match, nil
 }
 
