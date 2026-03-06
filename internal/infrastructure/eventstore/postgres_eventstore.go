@@ -4,12 +4,15 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"youpiteron.dev/wildlands-backend/internal/api"
 	"youpiteron.dev/wildlands-backend/internal/domain"
 )
 
 type PostgresEventStore struct {
 	pool *pgxpool.Pool
 }
+
+var _ api.EventStore = (*PostgresEventStore)(nil)
 
 func NewPostgresEventStore(pool *pgxpool.Pool) *PostgresEventStore {
 	return &PostgresEventStore{pool: pool}
@@ -77,9 +80,9 @@ func (s *PostgresEventStore) saveEvents(ctx context.Context, events []StoredEven
 		_, err = tx.Exec(
 			ctx,
 			`
-    INSERT INTO events (match_id, version, type, data, metadata, created_at)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    `,
+      INSERT INTO events (match_id, version, type, data, metadata, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      `,
 			event.MatchID, event.Version, event.Type, event.Data, event.Metadata, event.CreatedAt,
 		)
 		if err != nil {

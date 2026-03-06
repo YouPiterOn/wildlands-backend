@@ -1,5 +1,7 @@
 package domain
 
+import "errors"
+
 type MatchID string
 
 func (id MatchID) String() string {
@@ -24,6 +26,18 @@ func (s MatchState) String() string {
 		"STARTED",
 		"FINISHED",
 	}[s]
+}
+
+func ParseMatchState(s string) (MatchState, error) {
+	switch s {
+	case "CREATED":
+		return MatchStateCreated, nil
+	case "STARTED":
+		return MatchStateStarted, nil
+	case "FINISHED":
+		return MatchStateFinished, nil
+	}
+	return 0, errors.New("Invalid match state")
 }
 
 type Match struct {
