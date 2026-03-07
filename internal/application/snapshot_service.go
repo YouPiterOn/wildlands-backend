@@ -24,10 +24,17 @@ func NewSnapshotService(snapshotStore api.SnapshotStore, eventStore api.EventSto
 }
 
 func (s *SnapshotService) GetSnapshot(ctx context.Context, matchID domain.MatchID) (*domain.Match, error) {
-	snapshot, ok := s.snapshots[matchID]
-	if !ok {
-		s.snapshotStore.Load(ctx, matchID)
+	snapshot, err := s.loadSnapshotCache(ctx, matchID)
+	if err != nil {
+		snapshot, err = s.createNewSnapshot(ctx, matchID)
+		if err != nil {
+			return nil, err
+		}
 	}
+	if !snapshot.Stale {
+		return snapshot.Match, nil
+	}
+
 	events, version, err := s.eventStore.LoadSince(ctx, matchID, snapshot.Version)
 	if err != nil {
 		return nil, err
@@ -38,4 +45,49 @@ func (s *SnapshotService) GetSnapshot(ctx context.Context, matchID domain.MatchI
 	snapshot.Version = version
 	snapshot.Stale = false
 	return snapshot.Match, nil
+}
+
+func (s *SnapshotService) StaleSnapshot(ctx context.Context, matchID domain.MatchID) error {
+	snapshot, ok := s.snapshots[matchID]
+	if !ok {
+		return nil
+	}
+	snapshot.Stale = true
+	return nil
+}
+
+func (s *SnapshotService) loadSnapshotCache(ctx context.Context, matchID domain.MatchID) (*SnapshotCache, error) {
+	snapshot, ok := s.snapshots[matchID]
+	if !ok {
+		match, version, err := s.snapshotStore.Load(ctx, matchID)
+		if err != nil {
+			return nil, err
+		}
+		snapshot = &SnapshotCache{
+			Match:   match,
+			Version: version,
+			Stale:   false,
+		}
+		s.snapshots[matchID] = snapshot
+	}
+	return snapshot, nil
+}
+
+func (s *SnapshotService) createNewSnapshot(ctx context.Context, matchID domain.MatchID) (*SnapshotCache, error) {
+	events, version, err := s.eventStore.LoadAll(ctx, matchID)
+	if err != nil {
+		return nil, err
+	}
+	match := (*domain.Match)(nil)
+	for _, event := range events {
+		match, err = event.Apply(match)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &SnapshotCache{
+		Match:   match,
+		Version: version,
+		Stale:   false,
+	}, nil
 }

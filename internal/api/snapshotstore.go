@@ -8,5 +8,5 @@ import (
 
 type SnapshotStore interface {
 	Save(ctx context.Context, matchID domain.MatchID, snapshot *domain.Match) error
-	Load(ctx context.Context, matchID domain.MatchID) (*domain.Match, error)
+	Load(ctx context.Context, matchID domain.MatchID) (*domain.Match, int, error)
 }

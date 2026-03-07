@@ -2,6 +2,7 @@ package snapshotstore
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"youpiteron.dev/wildlands-backend/internal/api"
@@ -47,36 +48,39 @@ func (s *PostgresSnapshotStore) Save(ctx context.Context, matchID domain.MatchID
 	return nil
 }
 
-func (s *PostgresSnapshotStore) Load(ctx context.Context, matchID domain.MatchID) (*domain.Match, error) {
+func (s *PostgresSnapshotStore) Load(ctx context.Context, matchID domain.MatchID) (*domain.Match, int, error) {
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer conn.Release()
 	tx, err := conn.Begin(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer tx.Rollback(ctx)
 	rows, err := tx.Query(
 		ctx,
 		`
-		SELECT state, seats_count, current_turn FROM snapshots WHERE match_id = $1
+		SELECT id, state, seats_count, current_turn, version FROM snapshots WHERE match_id = $1 ORDER BY version DESC LIMIT 1
 		`,
 		matchID.String(),
 	)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
-	for rows.Next() {
-		var state domain.MatchState
-		var seatsCount int
-		var currentTurn int
-		err := rows.Scan(&state, &seatsCount, &currentTurn)
-		if err != nil {
-			return nil, err
-		}
+	if !rows.Next() {
+		return nil, 0, errors.New("No snapshot found")
 	}
-	return nil, nil
+	var storedMatch StoredMatch
+	err = rows.Scan(&storedMatch.MatchID, &storedMatch.State, &storedMatch.SeatsCount, &storedMatch.CurrentTurn, &storedMatch.Version)
+	if err != nil {
+		return nil, 0, err
+	}
+	match, version, err := storedMatch.ToDomainMatch()
+	if err != nil {
+		return nil, 0, err
+	}
+	return match, version, nil
 }
