@@ -24,30 +24,24 @@ func NewSnapshotService(snapshotStore api.SnapshotStore, eventStore api.EventSto
 }
 
 func (s *SnapshotService) GetSnapshot(ctx context.Context, matchID domain.MatchID) (*domain.Match, error) {
-	snapshot, err := s.loadSnapshotCache(ctx, matchID)
-	if err != nil {
-		snapshot, err = s.createNewSnapshot(ctx, matchID)
-		if err != nil {
-			return nil, err
-		}
+	snapshotCache := s.getOrCreateSnapshotCache(ctx, matchID)
+	if !snapshotCache.Stale {
+		return snapshotCache.Match, nil
 	}
-	if !snapshot.Stale {
-		return snapshot.Match, nil
-	}
-
-	events, version, err := s.eventStore.LoadSince(ctx, matchID, snapshot.Version)
+	events, version, err := s.eventStore.LoadSince(ctx, matchID, snapshotCache.Version)
 	if err != nil {
 		return nil, err
 	}
 	for _, event := range events {
-		event.Apply(snapshot.Match)
+		event.Apply(snapshotCache.Match)
 	}
-	snapshot.Version = version
-	snapshot.Stale = false
-	return snapshot.Match, nil
+	snapshotCache.Version = version
+	snapshotCache.Stale = false
+	s.snapshotStore.Save(ctx, matchID, snapshotCache.Match)
+	return snapshotCache.Match, nil
 }
 
-func (s *SnapshotService) StaleSnapshot(ctx context.Context, matchID domain.MatchID) error {
+func (s *SnapshotService) StaleSnapshotCache(ctx context.Context, matchID domain.MatchID) error {
 	snapshot, ok := s.snapshots[matchID]
 	if !ok {
 		return nil
@@ -56,38 +50,20 @@ func (s *SnapshotService) StaleSnapshot(ctx context.Context, matchID domain.Matc
 	return nil
 }
 
-func (s *SnapshotService) loadSnapshotCache(ctx context.Context, matchID domain.MatchID) (*SnapshotCache, error) {
+func (s *SnapshotService) getOrCreateSnapshotCache(ctx context.Context, matchID domain.MatchID) *SnapshotCache {
 	snapshot, ok := s.snapshots[matchID]
 	if !ok {
 		match, version, err := s.snapshotStore.Load(ctx, matchID)
 		if err != nil {
-			return nil, err
+			match = nil
+			version = 0
 		}
 		snapshot = &SnapshotCache{
 			Match:   match,
 			Version: version,
-			Stale:   false,
+			Stale:   true,
 		}
 		s.snapshots[matchID] = snapshot
 	}
-	return snapshot, nil
-}
-
-func (s *SnapshotService) createNewSnapshot(ctx context.Context, matchID domain.MatchID) (*SnapshotCache, error) {
-	events, version, err := s.eventStore.LoadAll(ctx, matchID)
-	if err != nil {
-		return nil, err
-	}
-	match := (*domain.Match)(nil)
-	for _, event := range events {
-		match, err = event.Apply(match)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &SnapshotCache{
-		Match:   match,
-		Version: version,
-		Stale:   false,
-	}, nil
+	return snapshot
 }
