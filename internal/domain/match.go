@@ -47,3 +47,13 @@ type Match struct {
 	Seats       []Seat
 	CurrentTurn int
 }
+
+func (m *Match) Clone() *Match {
+	return &Match{
+		ID:          m.ID,
+		State:       m.State,
+		SeatsCount:  m.SeatsCount,
+		Seats:       m.Seats,
+		CurrentTurn: m.CurrentTurn,
+	}
+}

@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"sync"
 
 	"youpiteron.dev/wildlands-backend/internal/api"
 	"youpiteron.dev/wildlands-backend/internal/domain"
@@ -16,17 +17,29 @@ type SnapshotCache struct {
 type SnapshotService struct {
 	snapshotStore api.SnapshotStore
 	eventStore    api.EventStore
-	snapshots     map[domain.MatchID]*SnapshotCache
+
+	mu        sync.RWMutex
+	snapshots map[domain.MatchID]*SnapshotCache
 }
 
 func NewSnapshotService(snapshotStore api.SnapshotStore, eventStore api.EventStore) *SnapshotService {
-	return &SnapshotService{snapshotStore: snapshotStore, eventStore: eventStore}
+	return &SnapshotService{
+		snapshotStore: snapshotStore,
+		eventStore:    eventStore,
+		snapshots:     make(map[domain.MatchID]*SnapshotCache),
+		mu:            sync.RWMutex{},
+	}
 }
 
 func (s *SnapshotService) GetSnapshot(ctx context.Context, matchID domain.MatchID) (*domain.Match, error) {
-	snapshotCache := s.getOrCreateSnapshotCache(ctx, matchID)
+	snapshotCache, err := s.getOrCreateSnapshotCache(ctx, matchID)
+	if err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if !snapshotCache.Stale {
-		return snapshotCache.Match, nil
+		return snapshotCache.Match.Clone(), nil
 	}
 	events, version, err := s.eventStore.LoadSince(ctx, matchID, snapshotCache.Version)
 	if err != nil {
@@ -37,11 +50,13 @@ func (s *SnapshotService) GetSnapshot(ctx context.Context, matchID domain.MatchI
 	}
 	snapshotCache.Version = version
 	snapshotCache.Stale = false
-	s.snapshotStore.Save(ctx, matchID, snapshotCache.Match)
-	return snapshotCache.Match, nil
+	go s.snapshotStore.Save(ctx, matchID, version, snapshotCache.Match)
+	return snapshotCache.Match.Clone(), nil
 }
 
-func (s *SnapshotService) StaleSnapshotCache(ctx context.Context, matchID domain.MatchID) error {
+func (s *SnapshotService) MarkSnapshotStale(matchID domain.MatchID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	snapshot, ok := s.snapshots[matchID]
 	if !ok {
 		return nil
@@ -50,20 +65,32 @@ func (s *SnapshotService) StaleSnapshotCache(ctx context.Context, matchID domain
 	return nil
 }
 
-func (s *SnapshotService) getOrCreateSnapshotCache(ctx context.Context, matchID domain.MatchID) *SnapshotCache {
-	snapshot, ok := s.snapshots[matchID]
+func (s *SnapshotService) getOrCreateSnapshotCache(ctx context.Context, matchID domain.MatchID) (*SnapshotCache, error) {
+	snapshot, ok := s.getSnapshotCache(matchID)
 	if !ok {
 		match, version, err := s.snapshotStore.Load(ctx, matchID)
 		if err != nil {
-			match = nil
-			version = 0
+			return nil, err
 		}
 		snapshot = &SnapshotCache{
 			Match:   match,
 			Version: version,
 			Stale:   true,
 		}
-		s.snapshots[matchID] = snapshot
+		s.setSnapshotCache(matchID, snapshot)
 	}
-	return snapshot
+	return snapshot, nil
+}
+
+func (s *SnapshotService) getSnapshotCache(matchID domain.MatchID) (*SnapshotCache, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	snapshot, ok := s.snapshots[matchID]
+	return snapshot, ok
+}
+
+func (s *SnapshotService) setSnapshotCache(matchID domain.MatchID, snapshot *SnapshotCache) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.snapshots[matchID] = snapshot
 }
