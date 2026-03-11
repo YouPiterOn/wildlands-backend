@@ -43,7 +43,6 @@ func ParseMatchState(s string) (MatchState, error) {
 type Match struct {
 	ID          MatchID
 	State       MatchState
-	SeatsCount  int
 	Seats       []Seat
 	CurrentTurn int
 	Version     int
@@ -53,7 +52,6 @@ func NewMatch(id MatchID) *Match {
 	return &Match{
 		ID:          id,
 		State:       MatchStateCreated,
-		SeatsCount:  0,
 		Seats:       []Seat{},
 		CurrentTurn: 0,
 		Version:     0,
@@ -64,7 +62,6 @@ func (m *Match) Clone() *Match {
 	return &Match{
 		ID:          m.ID,
 		State:       m.State,
-		SeatsCount:  m.SeatsCount,
 		Seats:       m.Seats,
 		CurrentTurn: m.CurrentTurn,
 		Version:     m.Version,

@@ -7,8 +7,7 @@ type Command interface {
 }
 
 type CommandCreateMatch struct {
-	MatchID    MatchID
-	SeatsCount int
+	MatchID MatchID
 }
 
 func (c CommandCreateMatch) Handle(match *Match) ([]Event, error) {
@@ -17,8 +16,7 @@ func (c CommandCreateMatch) Handle(match *Match) ([]Event, error) {
 	}
 	events := []Event{
 		EventMatchCreated{
-			MatchID:    c.MatchID,
-			SeatsCount: c.SeatsCount,
+			MatchID: c.MatchID,
 		},
 	}
 	return events, nil
@@ -35,9 +33,6 @@ func (c CommandJoinMatch) Handle(match *Match) ([]Event, error) {
 	}
 	if match.State != MatchStateCreated {
 		return nil, errors.New("Match already started of ended")
-	}
-	if len(match.Seats) >= match.SeatsCount {
-		return nil, errors.New("Match is already full")
 	}
 	events := []Event{
 		EventPlayerJoined{

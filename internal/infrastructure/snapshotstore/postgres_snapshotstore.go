@@ -36,10 +36,10 @@ func (s *PostgresSnapshotStore) Save(ctx context.Context, snapshot *domain.Match
 	_, err = tx.Exec(
 		ctx,
 		`
-    INSERT INTO snapshots (match_id, state, seats_count, current_turn, version)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO snapshots (match_id, state, current_turn, version)
+    VALUES ($1, $2, $3, $4)
     `,
-		storedMatch.MatchID, storedMatch.State, storedMatch.SeatsCount, storedMatch.CurrentTurn, storedMatch.Version,
+		storedMatch.MatchID, storedMatch.State, storedMatch.CurrentTurn, storedMatch.Version,
 	)
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (s *PostgresSnapshotStore) Load(ctx context.Context, matchID domain.MatchID
 	rows, err := tx.Query(
 		ctx,
 		`
-		SELECT id, state, seats_count, current_turn, version FROM snapshots WHERE match_id = $1 ORDER BY version DESC LIMIT 1
+		SELECT id, state, current_turn, version FROM snapshots WHERE match_id = $1 ORDER BY version DESC LIMIT 1
 		`,
 		matchID.String(),
 	)
@@ -77,7 +77,7 @@ func (s *PostgresSnapshotStore) Load(ctx context.Context, matchID domain.MatchID
 		return nil, nil
 	}
 	var storedMatch StoredMatch
-	err = rows.Scan(&storedMatch.MatchID, &storedMatch.State, &storedMatch.SeatsCount, &storedMatch.CurrentTurn, &storedMatch.Version)
+	err = rows.Scan(&storedMatch.MatchID, &storedMatch.State, &storedMatch.CurrentTurn, &storedMatch.Version)
 	if err != nil {
 		return nil, err
 	}
