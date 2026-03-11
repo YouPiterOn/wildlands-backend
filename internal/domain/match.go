@@ -46,6 +46,18 @@ type Match struct {
 	SeatsCount  int
 	Seats       []Seat
 	CurrentTurn int
+	Version     int
+}
+
+func NewMatch(id MatchID) *Match {
+	return &Match{
+		ID:          id,
+		State:       MatchStateCreated,
+		SeatsCount:  0,
+		Seats:       []Seat{},
+		CurrentTurn: 0,
+		Version:     0,
+	}
 }
 
 func (m *Match) Clone() *Match {
@@ -55,5 +67,15 @@ func (m *Match) Clone() *Match {
 		SeatsCount:  m.SeatsCount,
 		Seats:       m.Seats,
 		CurrentTurn: m.CurrentTurn,
+		Version:     m.Version,
 	}
+}
+
+func (m *Match) Apply(event Event) error {
+	_, err := event.apply(m)
+	if err != nil {
+		return err
+	}
+	m.Version++
+	return nil
 }

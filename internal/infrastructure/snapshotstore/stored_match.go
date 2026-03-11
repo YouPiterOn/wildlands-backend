@@ -10,29 +10,30 @@ type StoredMatch struct {
 	Version     int
 }
 
-func (s StoredMatch) ToDomainMatch() (*domain.Match, int, error) {
+func (s StoredMatch) ToDomainMatch() (*domain.Match, error) {
 	matchID, err := domain.ParseMatchID(s.MatchID)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	state, err := domain.ParseMatchState(s.State)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	return &domain.Match{
 		ID:          matchID,
 		State:       state,
 		SeatsCount:  s.SeatsCount,
 		CurrentTurn: s.CurrentTurn,
-	}, s.Version, nil
+		Version:     s.Version,
+	}, nil
 }
 
-func ToStoredMatch(match *domain.Match, version int) (StoredMatch, error) {
+func ToStoredMatch(match *domain.Match) (StoredMatch, error) {
 	return StoredMatch{
 		MatchID:     match.ID.String(),
 		State:       match.State.String(),
 		SeatsCount:  match.SeatsCount,
 		CurrentTurn: match.CurrentTurn,
-		Version:     version,
+		Version:     match.Version,
 	}, nil
 }

@@ -30,7 +30,7 @@ func (e EventType) String() string {
 
 type Event interface {
 	EventType() EventType
-	Apply(match *Match) (*Match, error)
+	apply(match *Match) (*Match, error)
 }
 
 type EventMatchCreated struct {
@@ -42,7 +42,7 @@ func (e EventMatchCreated) EventType() EventType {
 	return EventTypeMatchCreated
 }
 
-func (e EventMatchCreated) Apply(match *Match) (*Match, error) {
+func (e EventMatchCreated) apply(match *Match) (*Match, error) {
 	match.SeatsCount = e.SeatsCount
 	match.State = MatchStateCreated
 	return match, nil
@@ -57,7 +57,7 @@ func (e EventPlayerJoined) EventType() EventType {
 	return EventTypePlayerJoined
 }
 
-func (e EventPlayerJoined) Apply(match *Match) (*Match, error) {
+func (e EventPlayerJoined) apply(match *Match) (*Match, error) {
 	match.Seats = append(match.Seats, Seat{
 		SeatNumber: len(match.Seats),
 		PlayerID:   e.PlayerID,
@@ -74,7 +74,7 @@ func (e EventGameStarted) EventType() EventType {
 	return EventTypeGameStarted
 }
 
-func (e EventGameStarted) Apply(match *Match) (*Match, error) {
+func (e EventGameStarted) apply(match *Match) (*Match, error) {
 	match.State = MatchStateStarted
 	return match, nil
 }

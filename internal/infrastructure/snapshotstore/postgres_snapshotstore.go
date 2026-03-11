@@ -18,7 +18,11 @@ func NewPostgresSnapshotStore(pool *pgxpool.Pool) *PostgresSnapshotStore {
 	return &PostgresSnapshotStore{pool: pool}
 }
 
-func (s *PostgresSnapshotStore) Save(ctx context.Context, matchID domain.MatchID, version int, snapshot *domain.Match) error {
+func (s *PostgresSnapshotStore) Save(ctx context.Context, snapshot *domain.Match) error {
+	storedMatch, err := ToStoredMatch(snapshot)
+	if err != nil {
+		return err
+	}
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
 		return err
@@ -35,7 +39,7 @@ func (s *PostgresSnapshotStore) Save(ctx context.Context, matchID domain.MatchID
     INSERT INTO snapshots (match_id, state, seats_count, current_turn, version)
     VALUES ($1, $2, $3, $4, $5)
     `,
-		matchID.String(), snapshot.State.String(), snapshot.SeatsCount, snapshot.CurrentTurn, version,
+		storedMatch.MatchID, storedMatch.State, storedMatch.SeatsCount, storedMatch.CurrentTurn, storedMatch.Version,
 	)
 	if err != nil {
 		return err
@@ -47,15 +51,15 @@ func (s *PostgresSnapshotStore) Save(ctx context.Context, matchID domain.MatchID
 	return nil
 }
 
-func (s *PostgresSnapshotStore) Load(ctx context.Context, matchID domain.MatchID) (*domain.Match, int, error) {
+func (s *PostgresSnapshotStore) Load(ctx context.Context, matchID domain.MatchID) (*domain.Match, error) {
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	defer conn.Release()
 	tx, err := conn.Begin(ctx)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	defer tx.Rollback(ctx)
 	rows, err := tx.Query(
@@ -66,20 +70,20 @@ func (s *PostgresSnapshotStore) Load(ctx context.Context, matchID domain.MatchID
 		matchID.String(),
 	)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return nil, 0, nil
+		return nil, nil
 	}
 	var storedMatch StoredMatch
 	err = rows.Scan(&storedMatch.MatchID, &storedMatch.State, &storedMatch.SeatsCount, &storedMatch.CurrentTurn, &storedMatch.Version)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	match, version, err := storedMatch.ToDomainMatch()
+	match, err := storedMatch.ToDomainMatch()
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	return match, version, nil
+	return match, nil
 }
