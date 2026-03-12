@@ -18,7 +18,7 @@ func NewPostgresEventStore(pool *pgxpool.Pool) *PostgresEventStore {
 	return &PostgresEventStore{pool: pool}
 }
 
-func (s *PostgresEventStore) Append(ctx context.Context, matchID domain.MatchID, expectedVersion int, events ...domain.Event) error {
+func (s *PostgresEventStore) Append(ctx context.Context, matchID domain.MatchID, expectedVersion int, events []domain.Event) error {
 	version := expectedVersion + 1
 	storedEvents := make([]StoredEvent, len(events))
 	for i, event := range events {

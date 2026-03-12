@@ -3,11 +3,22 @@ package domain
 import "errors"
 
 type Command interface {
+	GetMatchID() MatchID
 	Handle(match *Match) ([]Event, error)
 }
 
 type CommandCreateMatch struct {
 	MatchID MatchID
+}
+
+func NewCommandCreateMatch(matchID MatchID) Command {
+	return CommandCreateMatch{
+		MatchID: matchID,
+	}
+}
+
+func (c CommandCreateMatch) GetMatchID() MatchID {
+	return c.MatchID
 }
 
 func (c CommandCreateMatch) Handle(match *Match) ([]Event, error) {
@@ -25,6 +36,17 @@ func (c CommandCreateMatch) Handle(match *Match) ([]Event, error) {
 type CommandJoinMatch struct {
 	MatchID  MatchID
 	PlayerID PlayerID
+}
+
+func NewCommandJoinMatch(matchID MatchID, playerID PlayerID) Command {
+	return CommandJoinMatch{
+		MatchID:  matchID,
+		PlayerID: playerID,
+	}
+}
+
+func (c CommandJoinMatch) GetMatchID() MatchID {
+	return c.MatchID
 }
 
 func (c CommandJoinMatch) Handle(match *Match) ([]Event, error) {
