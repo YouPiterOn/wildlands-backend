@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -15,6 +16,8 @@ const MIN_DISTANCE_BETWEEN_MOUNTAINS = 3
 
 const RUINS_COUNT = 5
 const MIN_DISTANCE_BETWEEN_RUINS = 3
+
+const MAX_TRY_COUNT = 1000
 
 type Terrain int
 
@@ -75,7 +78,7 @@ func (b *Board) String() string {
 	return builder.String()
 }
 
-func GenerateBoard(seed int64, boardNumber int, playerID PlayerID) *Board {
+func GenerateNewBoard(seed int64, boardNumber int, playerID PlayerID) (*Board, error) {
 	boardSeed := DeriveSeedFromInt(seed, boardNumber)
 	rng := rand.New(rand.NewSource(boardSeed))
 	cells := make([][]Cell, BOARD_SIZE)
@@ -85,20 +88,28 @@ func GenerateBoard(seed int64, boardNumber int, playerID PlayerID) *Board {
 			cells[i][j] = EmptyCell()
 		}
 	}
-	placeMountains(cells, rng)
-	placeRuins(cells, rng)
+	err := placeMountains(cells, rng)
+	if err != nil {
+		return nil, err
+	}
+	err = placeRuins(cells, rng)
+	if err != nil {
+		return nil, err
+	}
 	return &Board{
 		BoardNumber: boardNumber,
 		PlayerID:    playerID,
 		Cells:       cells,
 		Score:       0,
-	}
+	}, nil
 }
 
-func placeMountains(cells [][]Cell, rng *rand.Rand) {
+func placeMountains(cells [][]Cell, rng *rand.Rand) error {
 	mountains := []utils.Point{}
+	tryCount := 0
 
-	for len(mountains) < MOUNTAIN_COUNT {
+	for len(mountains) < MOUNTAIN_COUNT && tryCount < MAX_TRY_COUNT {
+		tryCount++
 		x := rng.Intn(BOARD_SIZE)
 		y := rng.Intn(BOARD_SIZE)
 
@@ -128,12 +139,19 @@ func placeMountains(cells [][]Cell, rng *rand.Rand) {
 		cells[y][x].Terrain = TerrainMountain
 		mountains = append(mountains, p)
 	}
+
+	if tryCount >= MAX_TRY_COUNT {
+		return errors.New("Failed to place mountains")
+	}
+	return nil
 }
 
-func placeRuins(cells [][]Cell, rng *rand.Rand) {
+func placeRuins(cells [][]Cell, rng *rand.Rand) error {
 	ruins := []utils.Point{}
+	tryCount := 0
 
-	for len(ruins) < RUINS_COUNT {
+	for len(ruins) < RUINS_COUNT && tryCount < MAX_TRY_COUNT {
+		tryCount++
 		x := rng.Intn(BOARD_SIZE)
 		y := rng.Intn(BOARD_SIZE)
 
@@ -159,4 +177,9 @@ func placeRuins(cells [][]Cell, rng *rand.Rand) {
 		cells[y][x].HasRuins = true
 		ruins = append(ruins, p)
 	}
+
+	if tryCount >= MAX_TRY_COUNT {
+		return errors.New("Failed to place ruins")
+	}
+	return nil
 }

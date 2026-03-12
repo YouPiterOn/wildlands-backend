@@ -13,6 +13,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to generate seed: %v", err)
 	}
-	board := domain.GenerateBoard(seed, 0, domain.PlayerID(uuid.New()))
+	board, err := domain.GenerateNewBoard(seed, 0, domain.PlayerID(uuid.New()))
+	if err != nil {
+		log.Fatalf("Failed to generate board: %v", err)
+		return
+	}
 	fmt.Println(board.String())
 }
