@@ -1,7 +1,9 @@
 package domain
 
 import (
+	"fmt"
 	"math/rand"
+	"strings"
 
 	"youpiteron.dev/wildlands-backend/internal/utils"
 )
@@ -24,6 +26,16 @@ const (
 	TerrainWater
 )
 
+func (t Terrain) Icon() string {
+	return []string{
+		".",
+		"M",
+		"m",
+		"F",
+		"W",
+	}[t]
+}
+
 type Cell struct {
 	Terrain  Terrain
 	HasRuins bool
@@ -36,11 +48,31 @@ func EmptyCell() Cell {
 	}
 }
 
+func (c *Cell) String() string {
+	if c.HasRuins {
+		return fmt.Sprintf("%sR", c.Terrain.Icon())
+	}
+	return fmt.Sprintf("%s ", c.Terrain.Icon())
+}
+
 type Board struct {
 	BoardNumber int
 	PlayerID    PlayerID
 	Cells       [][]Cell
 	Score       int
+}
+
+func (b *Board) String() string {
+	builder := strings.Builder{}
+	for _, row := range b.Cells {
+		builder.WriteString("| ")
+		for _, cell := range row {
+			builder.WriteString(cell.String())
+			builder.WriteString(" | ")
+		}
+		builder.WriteString("\n")
+	}
+	return builder.String()
 }
 
 func GenerateBoard(seed int64, boardNumber int, playerID PlayerID) *Board {
@@ -54,6 +86,7 @@ func GenerateBoard(seed int64, boardNumber int, playerID PlayerID) *Board {
 		}
 	}
 	placeMountains(cells, rng)
+	placeRuins(cells, rng)
 	return &Board{
 		BoardNumber: boardNumber,
 		PlayerID:    playerID,
@@ -68,6 +101,10 @@ func placeMountains(cells [][]Cell, rng *rand.Rand) {
 	for len(mountains) < MOUNTAIN_COUNT {
 		x := rng.Intn(BOARD_SIZE)
 		y := rng.Intn(BOARD_SIZE)
+
+		if x == 0 || x == BOARD_SIZE-1 || y == 0 || y == BOARD_SIZE-1 {
+			continue
+		}
 
 		p := utils.NewPoint(x, y)
 
