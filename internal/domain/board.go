@@ -58,24 +58,19 @@ func (c *Cell) String() string {
 	return fmt.Sprintf("%s ", c.Terrain.Icon())
 }
 
+type Placement struct {
+	Shape     *Shape
+	Rotations int
+	Flipped   bool
+	Terrain   Terrain
+	Point     utils.Point
+}
+
 type Board struct {
 	BoardNumber int
 	PlayerID    PlayerID
 	Cells       [][]Cell
 	Score       int
-}
-
-func (b *Board) String() string {
-	builder := strings.Builder{}
-	for _, row := range b.Cells {
-		builder.WriteString("| ")
-		for _, cell := range row {
-			builder.WriteString(cell.String())
-			builder.WriteString(" | ")
-		}
-		builder.WriteString("\n")
-	}
-	return builder.String()
 }
 
 func GenerateNewBoard(seed int64, boardNumber int, playerID PlayerID) (*Board, error) {
@@ -102,6 +97,69 @@ func GenerateNewBoard(seed int64, boardNumber int, playerID PlayerID) (*Board, e
 		Cells:       cells,
 		Score:       0,
 	}, nil
+}
+
+func (b *Board) CanPlaceShape(placement Placement) bool {
+	shape := placement.Shape.ToRotated(placement.Rotations)
+	if placement.Flipped {
+		shape = shape.ToFlipped()
+	}
+
+	p := placement.Point
+
+	for i := range shape.Grid {
+		for j := range shape.Grid[i] {
+			if shape.Grid[i][j] {
+				if b.Cells[p.Y+i][p.X+j].Terrain != TerrainEmpty {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
+}
+
+func (b *Board) PlaceShape(placement Placement) bool {
+	shape := placement.Shape.ToRotated(placement.Rotations)
+	if placement.Flipped {
+		shape = shape.ToFlipped()
+	}
+
+	p := placement.Point
+
+	for i := range shape.Grid {
+		for j := range shape.Grid[i] {
+			if shape.Grid[i][j] {
+				if b.Cells[p.Y+i][p.X+j].Terrain != TerrainEmpty {
+					return false
+				}
+			}
+		}
+	}
+
+	for i := range shape.Grid {
+		for j := range shape.Grid[i] {
+			if shape.Grid[i][j] {
+				b.Cells[p.Y+i][p.X+j].Terrain = placement.Terrain
+			}
+		}
+	}
+
+	return true
+}
+
+func (b *Board) String() string {
+	builder := strings.Builder{}
+	for _, row := range b.Cells {
+		builder.WriteString("| ")
+		for _, cell := range row {
+			builder.WriteString(cell.String())
+			builder.WriteString(" | ")
+		}
+		builder.WriteString("\n")
+	}
+	return builder.String()
 }
 
 func placeMountains(cells [][]Cell, rng *rand.Rand) error {
