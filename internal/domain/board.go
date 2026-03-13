@@ -99,6 +99,15 @@ func GenerateNewBoard(seed int64, boardNumber int, playerID PlayerID) (*Board, e
 	}, nil
 }
 
+func RestoreBoard(boardNumber int, playerID PlayerID, cells [][]Cell, score int) *Board {
+	return &Board{
+		BoardNumber: boardNumber,
+		PlayerID:    playerID,
+		Cells:       cells,
+		Score:       score,
+	}
+}
+
 func (b *Board) CanPlaceShape(placement Placement) bool {
 	shape := placement.Shape.ToRotated(placement.Rotations)
 	if placement.Flipped {
