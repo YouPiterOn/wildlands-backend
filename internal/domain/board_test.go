@@ -3,27 +3,11 @@ package domain
 import (
 	"testing"
 
-	"github.com/google/uuid"
 	"youpiteron.dev/wildlands-backend/internal/utils"
 )
 
-func emptyBoard() *Board {
-	cells := make([][]Cell, BOARD_SIZE)
-	for i := range cells {
-		cells[i] = make([]Cell, BOARD_SIZE)
-		for j := range cells[i] {
-			cells[i][j] = EmptyCell()
-		}
-	}
-	return &Board{
-		BoardNumber: 0,
-		Cells:       cells,
-		Score:       0,
-	}
-}
-
 func TestBoard_PlaceShape_Success(t *testing.T) {
-	board := emptyBoard()
+	board := EmptyBoard(PlayerID{})
 	placement := Placement{
 		Shape:     ShapeSquare2(),
 		Rotations: 0,
@@ -44,7 +28,7 @@ func TestBoard_PlaceShape_Success(t *testing.T) {
 }
 
 func TestBoard_PlaceShape_Failure(t *testing.T) {
-	board := emptyBoard()
+	board := EmptyBoard(PlayerID{})
 	board.Cells[2][2].Terrain = TerrainMountain
 	placement := Placement{
 		Shape:     ShapeSquare2(),
@@ -71,11 +55,11 @@ func TestBoard_GenerateNewBoard_IdenticalBoards(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to generate seed: %v", err)
 	}
-	board, err := GenerateNewBoard(seed, 0, PlayerID(uuid.New()))
+	board, err := GenerateNewBoard(seed, 0, PlayerID{})
 	if err != nil {
 		t.Fatalf("Failed to generate board: %v", err)
 	}
-	board2, err := GenerateNewBoard(seed, 0, PlayerID(uuid.New()))
+	board2, err := GenerateNewBoard(seed, 0, PlayerID{})
 	if err != nil {
 		t.Fatalf("Failed to generate board: %v", err)
 	}

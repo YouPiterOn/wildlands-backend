@@ -115,6 +115,23 @@ func RestoreBoard(boardNumber int, playerID PlayerID, cells [][]Cell, score int,
 	}
 }
 
+func EmptyBoard(playerID PlayerID) *Board {
+	cells := make([][]Cell, BOARD_SIZE)
+	for i := range cells {
+		cells[i] = make([]Cell, BOARD_SIZE)
+		for j := range cells[i] {
+			cells[i][j] = EmptyCell()
+		}
+	}
+	return &Board{
+		BoardNumber: 0,
+		PlayerID:    playerID,
+		Cells:       cells,
+		Score:       0,
+		Coins:       0,
+	}
+}
+
 func (b *Board) CanPlaceShape(placement Placement) bool {
 	shape := placement.Shape.ToRotated(placement.Rotations)
 	if placement.Flipped {
@@ -169,8 +186,11 @@ func (b *Board) AddCoins(coins int) {
 	b.Coins += coins
 }
 
-func (b *Board) CalculateScore() {
-
+func (b *Board) ScoreSeason(scoringCards []ScoringCard) {
+	for _, scoringCard := range scoringCards {
+		b.Score += scoringCard.ScoreBoard(b)
+	}
+	b.Score += b.Coins
 }
 
 func (b *Board) String() string {
