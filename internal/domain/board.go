@@ -24,18 +24,22 @@ type Terrain int
 const (
 	TerrainEmpty Terrain = iota
 	TerrainMountain
-	TerrainMonsters
+	TerrainMonster
 	TerrainForest
+	TerrainVillage
+	TerrainFarm
 	TerrainWater
 )
 
 func (t Terrain) Icon() string {
 	return []string{
-		".",
-		"M",
-		"m",
-		"F",
-		"W",
+		"...",
+		"Mnt",
+		"Mns",
+		"Fst",
+		"Vlg",
+		"Frm",
+		"Wtr",
 	}[t]
 }
 
@@ -63,7 +67,7 @@ type Placement struct {
 	Rotations int
 	Flipped   bool
 	Terrain   Terrain
-	Point     utils.Point
+	Position  utils.Vector2
 }
 
 type Board struct {
@@ -71,6 +75,7 @@ type Board struct {
 	PlayerID    PlayerID
 	Cells       [][]Cell
 	Score       int
+	Coins       int
 }
 
 func GenerateNewBoard(seed int64, boardNumber int, playerID PlayerID) (*Board, error) {
@@ -96,15 +101,17 @@ func GenerateNewBoard(seed int64, boardNumber int, playerID PlayerID) (*Board, e
 		PlayerID:    playerID,
 		Cells:       cells,
 		Score:       0,
+		Coins:       0,
 	}, nil
 }
 
-func RestoreBoard(boardNumber int, playerID PlayerID, cells [][]Cell, score int) *Board {
+func RestoreBoard(boardNumber int, playerID PlayerID, cells [][]Cell, score int, coins int) *Board {
 	return &Board{
 		BoardNumber: boardNumber,
 		PlayerID:    playerID,
 		Cells:       cells,
 		Score:       score,
+		Coins:       coins,
 	}
 }
 
@@ -114,7 +121,7 @@ func (b *Board) CanPlaceShape(placement Placement) bool {
 		shape = shape.ToFlipped()
 	}
 
-	p := placement.Point
+	p := placement.Position
 
 	for i := range shape.Grid {
 		for j := range shape.Grid[i] {
@@ -135,7 +142,7 @@ func (b *Board) PlaceShape(placement Placement) bool {
 		shape = shape.ToFlipped()
 	}
 
-	p := placement.Point
+	p := placement.Position
 
 	for i := range shape.Grid {
 		for j := range shape.Grid[i] {
@@ -158,6 +165,14 @@ func (b *Board) PlaceShape(placement Placement) bool {
 	return true
 }
 
+func (b *Board) AddCoins(coins int) {
+	b.Coins += coins
+}
+
+func (b *Board) CalculateScore() {
+
+}
+
 func (b *Board) String() string {
 	builder := strings.Builder{}
 	for _, row := range b.Cells {
@@ -172,7 +187,7 @@ func (b *Board) String() string {
 }
 
 func placeMountains(cells [][]Cell, rng *rand.Rand) error {
-	mountains := []utils.Point{}
+	mountains := []utils.Vector2{}
 	tryCount := 0
 
 	for len(mountains) < MOUNTAIN_COUNT && tryCount < MAX_TRY_COUNT {
@@ -184,7 +199,7 @@ func placeMountains(cells [][]Cell, rng *rand.Rand) error {
 			continue
 		}
 
-		p := utils.NewPoint(x, y)
+		p := utils.NewVector2(x, y)
 
 		if cells[y][x].Terrain != TerrainEmpty || cells[y][x].HasRuins {
 			continue
@@ -214,7 +229,7 @@ func placeMountains(cells [][]Cell, rng *rand.Rand) error {
 }
 
 func placeRuins(cells [][]Cell, rng *rand.Rand) error {
-	ruins := []utils.Point{}
+	ruins := []utils.Vector2{}
 	tryCount := 0
 
 	for len(ruins) < RUINS_COUNT && tryCount < MAX_TRY_COUNT {
@@ -222,7 +237,7 @@ func placeRuins(cells [][]Cell, rng *rand.Rand) error {
 		x := rng.Intn(BOARD_SIZE)
 		y := rng.Intn(BOARD_SIZE)
 
-		p := utils.NewPoint(x, y)
+		p := utils.NewVector2(x, y)
 
 		if cells[y][x].Terrain == TerrainMountain || cells[y][x].HasRuins {
 			continue

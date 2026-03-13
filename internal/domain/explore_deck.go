@@ -2,13 +2,13 @@ package domain
 
 import "math/rand"
 
-type Deck struct {
-	Cards       []Card
+type ExploreDeck struct {
+	Cards       []ExploreCard
 	ShuffleSeed int64
 }
 
-func NewShuffledDeck(cards []Card, seed int64) *Deck {
-	deck := &Deck{
+func NewShuffledDeck(cards []ExploreCard, seed int64) *ExploreDeck {
+	deck := &ExploreDeck{
 		Cards:       cards,
 		ShuffleSeed: seed,
 	}
@@ -16,18 +16,18 @@ func NewShuffledDeck(cards []Card, seed int64) *Deck {
 	return deck
 }
 
-func (d *Deck) DrawCard() *Card {
+func (d *ExploreDeck) DrawCard() *ExploreCard {
 	card := d.Cards[0]
 	d.Cards = d.Cards[1:]
 	return &card
 }
 
-func (d *Deck) AddCardsAndShuffle(cards []Card, seed int64) {
+func (d *ExploreDeck) AddCardsAndShuffle(cards []ExploreCard, seed int64) {
 	d.Cards = append(d.Cards, cards...)
 	d.Shuffle()
 }
 
-func (d *Deck) Shuffle() {
+func (d *ExploreDeck) Shuffle() {
 	rng := rand.New(rand.NewSource(d.ShuffleSeed))
 	for i := range d.Cards {
 		j := rng.Intn(i + 1)

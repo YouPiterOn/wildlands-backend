@@ -7,11 +7,10 @@ import (
 	"youpiteron.dev/wildlands-backend/internal/utils"
 )
 
-// emptyBoard returns a 5x5 board with all empty cells for testing.
 func emptyBoard() *Board {
-	cells := make([][]Cell, 11)
+	cells := make([][]Cell, BOARD_SIZE)
 	for i := range cells {
-		cells[i] = make([]Cell, 11)
+		cells[i] = make([]Cell, BOARD_SIZE)
 		for j := range cells[i] {
 			cells[i][j] = EmptyCell()
 		}
@@ -30,7 +29,7 @@ func TestBoard_PlaceShape_Success(t *testing.T) {
 		Rotations: 0,
 		Flipped:   false,
 		Terrain:   TerrainForest,
-		Point:     utils.NewPoint(1, 1),
+		Position:  utils.NewVector2(1, 1),
 	}
 	ok := board.PlaceShape(placement)
 	if !ok {
@@ -52,7 +51,7 @@ func TestBoard_PlaceShape_Failure(t *testing.T) {
 		Rotations: 0,
 		Flipped:   false,
 		Terrain:   TerrainForest,
-		Point:     utils.NewPoint(1, 1), // 2x2 covers (1,1),(2,1),(1,2),(2,2) — (2,2) is mountain
+		Position:  utils.NewVector2(1, 1), // 2x2 covers (1,1),(2,1),(1,2),(2,2) — (2,2) is mountain
 	}
 	ok := board.PlaceShape(placement)
 	if ok {
