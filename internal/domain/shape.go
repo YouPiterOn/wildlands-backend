@@ -70,6 +70,12 @@ func (s *Shape) String() string {
 	return builder.String()
 }
 
+func ShapeSquare1() *Shape {
+	return NewShape([][]bool{
+		{true},
+	})
+}
+
 func ShapeSquare2() *Shape {
 	return NewShape([][]bool{
 		{true, true},
