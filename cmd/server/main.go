@@ -1,22 +1,40 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"log/slog"
+	"net/http"
 
-	"github.com/google/uuid"
-	"youpiteron.dev/wildlands-backend/internal/domain"
+	"youpiteron.dev/wildlands-backend/internal/application"
+	"youpiteron.dev/wildlands-backend/internal/db"
+	"youpiteron.dev/wildlands-backend/internal/env"
+	"youpiteron.dev/wildlands-backend/internal/infrastructure"
+	"youpiteron.dev/wildlands-backend/internal/infrastructure/eventstore"
+	"youpiteron.dev/wildlands-backend/internal/infrastructure/snapshotstore"
+	"youpiteron.dev/wildlands-backend/internal/transport"
 )
 
 func main() {
-	seed, err := domain.GenerateSeed()
+	logger := infrastructure.NewConsoleLogger()
+	err := env.LoadEnv()
 	if err != nil {
-		log.Fatalf("Failed to generate seed: %v", err)
-	}
-	board, err := domain.GenerateNewBoard(seed, 0, domain.PlayerID(uuid.New()))
-	if err != nil {
-		log.Fatalf("Failed to generate board: %v", err)
+		logger.Error("Failed to load env", slog.String("error", err.Error()))
 		return
 	}
-	fmt.Println(board.String())
+
+	pool, err := db.NewPostgresPool(env.PostgresURL.GetValue())
+	if err != nil {
+		logger.Error("Failed to create postgres pool", slog.String("error", err.Error()))
+		return
+	}
+
+	eventStore := eventstore.NewPostgresEventStore(pool)
+	snapshotStore := snapshotstore.NewPostgresSnapshotStore(pool)
+
+	matchRepository := application.NewAggregateMatchRepository(snapshotStore, eventStore, logger)
+	matchService := application.NewMatchService(eventStore, matchRepository, logger)
+
+	wsHandler := transport.NewWSHandler(matchService)
+	router := transport.NewRouter(wsHandler)
+
+	http.ListenAndServe(":8080", router)
 }

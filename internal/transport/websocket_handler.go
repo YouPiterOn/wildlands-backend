@@ -13,7 +13,11 @@ type WSHandler struct {
 	matchService *application.MatchService
 }
 
-func (h *WSHandler) handleConnection(ctx context.Context, conn *websocket.Conn) {
+func NewWSHandler(matchService *application.MatchService) *WSHandler {
+	return &WSHandler{matchService: matchService}
+}
+
+func (h *WSHandler) HandleConnection(ctx context.Context, conn *websocket.Conn) {
 	for {
 		command, err := h.readCommand(ctx, conn)
 		if err != nil {
