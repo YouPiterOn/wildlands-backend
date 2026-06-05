@@ -17,16 +17,19 @@ func (h *WSHandler) handleConnection(ctx context.Context, conn *websocket.Conn) 
 	for {
 		command, err := h.readCommand(ctx, conn)
 		if err != nil {
+			h.writeError(ctx, conn, err)
 			continue
 		}
 
 		events, err := h.matchService.HandleCommand(ctx, command)
 		if err != nil {
+			h.writeError(ctx, conn, err)
 			continue
 		}
 
 		err = h.writeEvents(ctx, conn, events)
 		if err != nil {
+			h.writeError(ctx, conn, err)
 			continue
 		}
 	}
@@ -53,4 +56,9 @@ func (h *WSHandler) writeEvents(ctx context.Context, conn *websocket.Conn, event
 		jsonEvents[i] = jsonEvent
 	}
 	return wsjson.Write(ctx, conn, jsonEvents)
+}
+
+func (h *WSHandler) writeError(ctx context.Context, conn *websocket.Conn, err error) error {
+	jsonError := ToJsonError(err)
+	return wsjson.Write(ctx, conn, jsonError)
 }
