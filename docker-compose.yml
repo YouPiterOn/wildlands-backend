@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wildlands-postgres
+    environment:
+      POSTGRES_USER: wildlands
+      POSTGRES_PASSWORD: wildlands
+      POSTGRES_DB: wildlands
+    ports:
+      - "3000:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

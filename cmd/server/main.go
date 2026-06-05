@@ -13,6 +13,8 @@ import (
 	"youpiteron.dev/wildlands-backend/internal/transport"
 )
 
+const PORT = ":8080"
+
 func main() {
 	logger := infrastructure.NewConsoleLogger()
 	err := env.LoadEnv()
@@ -36,5 +38,10 @@ func main() {
 	wsHandler := transport.NewWSHandler(matchService)
 	router := transport.NewRouter(wsHandler)
 
-	http.ListenAndServe(":8080", router)
+	logger.Info("Starting server on port http://localhost%s", PORT)
+	err = http.ListenAndServe(PORT, router)
+	if err != nil {
+		logger.Error("Failed to start server", slog.String("error", err.Error()))
+		return
+	}
 }
