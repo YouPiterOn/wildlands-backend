@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"log/slog"
 
 	"youpiteron.dev/wildlands-backend/internal/api"
 	"youpiteron.dev/wildlands-backend/internal/domain"
@@ -10,12 +11,13 @@ import (
 type AggregateMatchRepository struct {
 	snapshotStore api.SnapshotStore
 	eventStore    api.EventStore
+	logger        api.Logger
 }
 
 var _ api.MatchRepository = (*AggregateMatchRepository)(nil)
 
-func NewAggregateMatchRepository(snapshotStore api.SnapshotStore, eventStore api.EventStore) *AggregateMatchRepository {
-	return &AggregateMatchRepository{snapshotStore: snapshotStore, eventStore: eventStore}
+func NewAggregateMatchRepository(snapshotStore api.SnapshotStore, eventStore api.EventStore, logger api.Logger) *AggregateMatchRepository {
+	return &AggregateMatchRepository{snapshotStore: snapshotStore, eventStore: eventStore, logger: logger}
 }
 
 func (r *AggregateMatchRepository) Load(ctx context.Context, id domain.MatchID) (*domain.Match, error) {
@@ -26,7 +28,12 @@ func (r *AggregateMatchRepository) Load(ctx context.Context, id domain.MatchID) 
 
 	events, _, err := r.eventStore.LoadSince(ctx, id, match.Version)
 	if err != nil {
-		return nil, err
+		r.logger.Error("error loading events",
+			slog.String("match_id", id.String()),
+			slog.Int("version", match.Version),
+			slog.String("error", err.Error()))
+
+		return nil, ErrEventsLoad
 	}
 
 	if len(events) == 0 {
@@ -36,7 +43,13 @@ func (r *AggregateMatchRepository) Load(ctx context.Context, id domain.MatchID) 
 	for _, e := range events {
 		err := match.Apply(e)
 		if err != nil {
-			return nil, err
+			r.logger.Error("error applying event",
+				slog.String("match_id", id.String()),
+				slog.Int("version", match.Version),
+				slog.String("event_type", e.EventType().String()),
+				slog.String("error", err.Error()))
+
+			return nil, ErrEventApply
 		}
 	}
 

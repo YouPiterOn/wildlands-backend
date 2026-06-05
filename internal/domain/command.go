@@ -2,7 +2,19 @@ package domain
 
 import "errors"
 
+type CommandType string
+
+const (
+	CommandTypeCreateMatch CommandType = "CREATE_MATCH"
+	CommandTypeJoinMatch   CommandType = "JOIN_MATCH"
+)
+
+func (c CommandType) String() string {
+	return string(c)
+}
+
 type Command interface {
+	Type() CommandType
 	GetMatchID() MatchID
 	Handle(match *Match) ([]Event, error)
 }
@@ -15,6 +27,10 @@ func NewCommandCreateMatch(matchID MatchID) Command {
 	return CommandCreateMatch{
 		MatchID: matchID,
 	}
+}
+
+func (c CommandCreateMatch) Type() CommandType {
+	return CommandTypeCreateMatch
 }
 
 func (c CommandCreateMatch) GetMatchID() MatchID {
@@ -43,6 +59,10 @@ func NewCommandJoinMatch(matchID MatchID, playerID PlayerID) Command {
 		MatchID:  matchID,
 		PlayerID: playerID,
 	}
+}
+
+func (c CommandJoinMatch) Type() CommandType {
+	return CommandTypeJoinMatch
 }
 
 func (c CommandJoinMatch) GetMatchID() MatchID {
