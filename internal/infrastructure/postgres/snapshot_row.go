@@ -1,4 +1,4 @@
-package snapshotstore
+package postgres
 
 import (
 	"encoding/json"
@@ -6,15 +6,15 @@ import (
 	"youpiteron.dev/wildlands-backend/internal/domain"
 )
 
-type StoredMatch struct {
+type SnapshotRow struct {
 	MatchID     string
 	State       string
 	CurrentTurn int
-	SeatsJson   []byte
+	BoardsJson  []byte
 	Version     int
 }
 
-func (s StoredMatch) ToDomainMatch() (*domain.Match, error) {
+func (s SnapshotRow) ToDomainMatch() (*domain.Match, error) {
 	matchID, err := domain.ParseMatchID(s.MatchID)
 	if err != nil {
 		return nil, err
@@ -23,30 +23,30 @@ func (s StoredMatch) ToDomainMatch() (*domain.Match, error) {
 	if err != nil {
 		return nil, err
 	}
-	seats := []domain.Seat{}
-	err = json.Unmarshal(s.SeatsJson, &seats)
+	boards := []domain.Board{}
+	err = json.Unmarshal(s.BoardsJson, &boards)
 	if err != nil {
 		return nil, err
 	}
 	return &domain.Match{
 		ID:          matchID,
 		State:       state,
-		Seats:       seats,
+		Boards:      boards,
 		CurrentTurn: s.CurrentTurn,
 		Version:     s.Version,
 	}, nil
 }
 
-func ToStoredMatch(match *domain.Match) (StoredMatch, error) {
-	seatsJson, err := json.Marshal(match.Seats)
+func ToSnapshotRow(match *domain.Match) (SnapshotRow, error) {
+	boardsJson, err := json.Marshal(match.Boards)
 	if err != nil {
-		return StoredMatch{}, err
+		return SnapshotRow{}, err
 	}
-	return StoredMatch{
+	return SnapshotRow{
 		MatchID:     match.ID.String(),
 		State:       match.State.String(),
 		CurrentTurn: match.CurrentTurn,
-		SeatsJson:   seatsJson,
+		BoardsJson:  boardsJson,
 		Version:     match.Version,
 	}, nil
 }

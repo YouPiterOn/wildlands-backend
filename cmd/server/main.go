@@ -4,12 +4,12 @@ import (
 	"log/slog"
 	"net/http"
 
-	"youpiteron.dev/wildlands-backend/internal/application"
+	"youpiteron.dev/wildlands-backend/internal/application/repository"
+	"youpiteron.dev/wildlands-backend/internal/application/service"
 	"youpiteron.dev/wildlands-backend/internal/db"
 	"youpiteron.dev/wildlands-backend/internal/env"
 	"youpiteron.dev/wildlands-backend/internal/infrastructure"
-	"youpiteron.dev/wildlands-backend/internal/infrastructure/eventstore"
-	"youpiteron.dev/wildlands-backend/internal/infrastructure/snapshotstore"
+	"youpiteron.dev/wildlands-backend/internal/infrastructure/postgres"
 	"youpiteron.dev/wildlands-backend/internal/transport"
 )
 
@@ -29,11 +29,12 @@ func main() {
 		return
 	}
 
-	eventStore := eventstore.NewPostgresEventStore(pool)
-	snapshotStore := snapshotstore.NewPostgresSnapshotStore(pool)
+	eventStore := postgres.NewEventStore(pool)
+	snapshotStore := postgres.NewSnapshotStore(pool)
+	matchMetadataStore := postgres.NewMatchMetadataStore(pool)
 
-	matchRepository := application.NewAggregateMatchRepository(snapshotStore, eventStore, logger)
-	matchService := application.NewMatchService(eventStore, matchRepository, logger)
+	matchRepository := repository.NewMatchAggregate(snapshotStore, eventStore, matchMetadataStore, logger)
+	matchService := service.NewMatch(eventStore, matchMetadataStore, matchRepository, logger)
 
 	wsHandler := transport.NewWSHandler(matchService)
 	router := transport.NewRouter(wsHandler)

@@ -1,4 +1,4 @@
-package eventstore
+package postgres
 
 import (
 	"context"
@@ -8,21 +8,21 @@ import (
 	"youpiteron.dev/wildlands-backend/internal/domain"
 )
 
-type PostgresEventStore struct {
+type EventStore struct {
 	pool *pgxpool.Pool
 }
 
-var _ api.EventStore = (*PostgresEventStore)(nil)
+var _ api.EventStore = (*EventStore)(nil)
 
-func NewPostgresEventStore(pool *pgxpool.Pool) *PostgresEventStore {
-	return &PostgresEventStore{pool: pool}
+func NewEventStore(pool *pgxpool.Pool) *EventStore {
+	return &EventStore{pool: pool}
 }
 
-func (s *PostgresEventStore) Append(ctx context.Context, matchID domain.MatchID, expectedVersion int, events []domain.Event) error {
+func (s *EventStore) Append(ctx context.Context, matchID domain.MatchID, expectedVersion int, events []domain.Event) error {
 	version := expectedVersion + 1
-	storedEvents := make([]StoredEvent, len(events))
+	storedEvents := make([]EventRow, len(events))
 	for i, event := range events {
-		storedEvent, err := ToStoredEvent(event, version+i)
+		storedEvent, err := ToEventRow(event, version+i)
 		if err != nil {
 			return err
 		}
@@ -35,7 +35,7 @@ func (s *PostgresEventStore) Append(ctx context.Context, matchID domain.MatchID,
 	return nil
 }
 
-func (s *PostgresEventStore) LoadAll(ctx context.Context, matchID domain.MatchID) ([]domain.Event, int, error) {
+func (s *EventStore) LoadAll(ctx context.Context, matchID domain.MatchID) ([]domain.Event, int, error) {
 	storedEvents, err := s.getEvents(ctx, matchID, 0)
 	if err != nil {
 		return nil, 0, err
@@ -50,7 +50,7 @@ func (s *PostgresEventStore) LoadAll(ctx context.Context, matchID domain.MatchID
 	return events, storedEvents[len(storedEvents)-1].Version, nil
 }
 
-func (s *PostgresEventStore) LoadSince(ctx context.Context, matchID domain.MatchID, version int) ([]domain.Event, int, error) {
+func (s *EventStore) LoadSince(ctx context.Context, matchID domain.MatchID, version int) ([]domain.Event, int, error) {
 	storedEvents, err := s.getEvents(ctx, matchID, version)
 	if err != nil {
 		return nil, 0, err
@@ -65,7 +65,7 @@ func (s *PostgresEventStore) LoadSince(ctx context.Context, matchID domain.Match
 	return events, storedEvents[len(storedEvents)-1].Version, nil
 }
 
-func (s *PostgresEventStore) saveEvents(ctx context.Context, events []StoredEvent) error {
+func (s *EventStore) saveEvents(ctx context.Context, events []EventRow) error {
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func (s *PostgresEventStore) saveEvents(ctx context.Context, events []StoredEven
 	return nil
 }
 
-func (s *PostgresEventStore) getEvents(ctx context.Context, matchID domain.MatchID, version int) ([]StoredEvent, error) {
+func (s *EventStore) getEvents(ctx context.Context, matchID domain.MatchID, version int) ([]EventRow, error) {
 	matchIDString := matchID.String()
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
@@ -117,9 +117,9 @@ func (s *PostgresEventStore) getEvents(ctx context.Context, matchID domain.Match
 	}
 	defer rows.Close()
 
-	events := []StoredEvent{}
+	events := []EventRow{}
 	for rows.Next() {
-		var event StoredEvent
+		var event EventRow
 		err := rows.Scan(&event.ID, &event.MatchID, &event.Version, &event.Type, &event.Data, &event.Metadata, &event.CreatedAt)
 		if err != nil {
 			return nil, err

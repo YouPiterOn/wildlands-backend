@@ -71,11 +71,11 @@ type Placement struct {
 }
 
 type Board struct {
-	BoardNumber int
-	PlayerID    PlayerID
-	Cells       [][]Cell
-	Score       int
-	Coins       int
+	BoardNumber int      `json:"board_number"`
+	PlayerID    PlayerID `json:"player_id"`
+	Cells       [][]Cell `json:"cells"`
+	Score       int      `json:"score"`
+	Coins       int      `json:"coins"`
 }
 
 func GenerateNewBoard(seed int64, boardNumber int, playerID PlayerID) (*Board, error) {

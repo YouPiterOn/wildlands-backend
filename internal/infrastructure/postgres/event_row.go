@@ -1,4 +1,4 @@
-package eventstore
+package postgres
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"youpiteron.dev/wildlands-backend/internal/domain"
 )
 
-type StoredEvent struct {
+type EventRow struct {
 	ID        string
 	MatchID   string
 	Version   int
@@ -18,7 +18,7 @@ type StoredEvent struct {
 	CreatedAt time.Duration
 }
 
-func (s StoredEvent) ToDomainEvent() (domain.Event, error) {
+func (s EventRow) ToDomainEvent() (domain.Event, error) {
 	mapper, ok := toDomainEventMapperRegistry[s.Type]
 	if !ok {
 		return nil, errors.New("invalid event type")
@@ -26,16 +26,16 @@ func (s StoredEvent) ToDomainEvent() (domain.Event, error) {
 	return mapper(s)
 }
 
-func ToStoredEvent(event domain.Event, version int) (StoredEvent, error) {
+func ToEventRow(event domain.Event, version int) (EventRow, error) {
 	mapper, ok := toStoredEventMapperRegistry[event.EventType()]
 	if !ok {
-		return StoredEvent{}, errors.New("invalid event type")
+		return EventRow{}, errors.New("invalid event type")
 	}
 	return mapper(event, version)
 }
 
-var toDomainEventMapperRegistry = map[domain.EventType]func(StoredEvent) (domain.Event, error){
-	domain.EventTypeMatchCreated: func(storedEvent StoredEvent) (domain.Event, error) {
+var toDomainEventMapperRegistry = map[domain.EventType]func(EventRow) (domain.Event, error){
+	domain.EventTypeMatchCreated: func(storedEvent EventRow) (domain.Event, error) {
 		matchID, err := domain.ParseMatchID(storedEvent.MatchID)
 		if err != nil {
 			return nil, err
@@ -44,7 +44,7 @@ var toDomainEventMapperRegistry = map[domain.EventType]func(StoredEvent) (domain
 			MatchID: matchID,
 		}, nil
 	},
-	domain.EventTypePlayerJoined: func(storedEvent StoredEvent) (domain.Event, error) {
+	domain.EventTypePlayerJoined: func(storedEvent EventRow) (domain.Event, error) {
 		var event PlayerJoinedEventData
 		err := json.Unmarshal(storedEvent.Data, &event)
 		if err != nil {
@@ -63,7 +63,7 @@ var toDomainEventMapperRegistry = map[domain.EventType]func(StoredEvent) (domain
 			PlayerID: playerID,
 		}, nil
 	},
-	domain.EventTypeGameStarted: func(storedEvent StoredEvent) (domain.Event, error) {
+	domain.EventTypeGameStarted: func(storedEvent EventRow) (domain.Event, error) {
 		matchID, err := domain.ParseMatchID(storedEvent.MatchID)
 		if err != nil {
 			return nil, err
@@ -74,42 +74,42 @@ var toDomainEventMapperRegistry = map[domain.EventType]func(StoredEvent) (domain
 	},
 }
 
-var toStoredEventMapperRegistry = map[domain.EventType]func(domain.Event, int) (StoredEvent, error){
-	domain.EventTypeMatchCreated: func(event domain.Event, version int) (StoredEvent, error) {
+var toStoredEventMapperRegistry = map[domain.EventType]func(domain.Event, int) (EventRow, error){
+	domain.EventTypeMatchCreated: func(event domain.Event, version int) (EventRow, error) {
 		domainEvent, ok := event.(*domain.EventMatchCreated)
 		if !ok {
-			return StoredEvent{}, errors.New("invalid domain event type")
+			return EventRow{}, errors.New("invalid domain event type")
 		}
-		return StoredEvent{
+		return EventRow{
 			Type:    domainEvent.EventType(),
 			MatchID: domainEvent.MatchID.String(),
 			Version: version,
 		}, nil
 	},
-	domain.EventTypePlayerJoined: func(event domain.Event, version int) (StoredEvent, error) {
+	domain.EventTypePlayerJoined: func(event domain.Event, version int) (EventRow, error) {
 		domainEvent, ok := event.(*domain.EventPlayerJoined)
 		if !ok {
-			return StoredEvent{}, errors.New("invalid domain event type")
+			return EventRow{}, errors.New("invalid domain event type")
 		}
 		data, err := json.Marshal(PlayerJoinedEventData{
 			PlayerID: domainEvent.PlayerID.String(),
 		})
 		if err != nil {
-			return StoredEvent{}, err
+			return EventRow{}, err
 		}
-		return StoredEvent{
+		return EventRow{
 			Type:    domainEvent.EventType(),
 			MatchID: domainEvent.MatchID.String(),
 			Version: version,
 			Data:    data,
 		}, nil
 	},
-	domain.EventTypeGameStarted: func(event domain.Event, version int) (StoredEvent, error) {
+	domain.EventTypeGameStarted: func(event domain.Event, version int) (EventRow, error) {
 		domainEvent, ok := event.(*domain.EventGameStarted)
 		if !ok {
-			return StoredEvent{}, errors.New("invalid domain event type")
+			return EventRow{}, errors.New("invalid domain event type")
 		}
-		return StoredEvent{
+		return EventRow{
 			Type:    domainEvent.EventType(),
 			MatchID: domainEvent.MatchID.String(),
 			Version: version,

@@ -5,15 +5,15 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
-	"youpiteron.dev/wildlands-backend/internal/application"
+	"youpiteron.dev/wildlands-backend/internal/application/service"
 	"youpiteron.dev/wildlands-backend/internal/domain"
 )
 
 type WSHandler struct {
-	matchService *application.MatchService
+	matchService *service.Match
 }
 
-func NewWSHandler(matchService *application.MatchService) *WSHandler {
+func NewWSHandler(matchService *service.Match) *WSHandler {
 	return &WSHandler{matchService: matchService}
 }
 

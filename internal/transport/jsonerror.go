@@ -1,6 +1,6 @@
 package transport
 
-import "youpiteron.dev/wildlands-backend/internal/application"
+import "youpiteron.dev/wildlands-backend/internal/utils"
 
 type JsonError struct {
 	Code    string `json:"code"`
@@ -9,22 +9,22 @@ type JsonError struct {
 
 func ToJsonError(err error) JsonError {
 	switch err {
-	case application.ErrEventsLoad:
+	case utils.ErrEventLoad:
 		return JsonError{
-			Code:    "EVENTS_LOAD_ERROR",
+			Code:    "EVENT_LOAD_ERROR",
 			Message: err.Error(),
 		}
-	case application.ErrEventsAppend:
+	case utils.ErrEventAppend:
 		return JsonError{
-			Code:    "EVENTS_APPEND_ERROR",
+			Code:    "EVENT_APPEND_ERROR",
 			Message: err.Error(),
 		}
-	case application.ErrEventApply:
+	case utils.ErrEventApply:
 		return JsonError{
 			Code:    "EVENT_APPLY_ERROR",
 			Message: err.Error(),
 		}
-	case application.ErrCommandHandle:
+	case utils.ErrCommandHandle:
 		return JsonError{
 			Code:    "COMMAND_HANDLE_ERROR",
 			Message: err.Error(),

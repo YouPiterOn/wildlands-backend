@@ -6,7 +6,7 @@ const (
 	EventTypeMatchCreated EventType = iota
 	EventTypePlayerJoined
 	EventTypeGameStarted
-	EventTypeCardOpened
+	EventTypeExploreCardOpened
 	EventTypeShapePlaced
 	EventTypeTurnAdvanced
 	EventTypeSeasonEnded
@@ -19,7 +19,7 @@ func (e EventType) String() string {
 		"MATCH_CREATED",
 		"PLAYER_JOINED",
 		"GAME_STARTED",
-		"CARD_OPENED",
+		"EXPLORE_CARD_OPENED",
 		"SHAPE_PLACED",
 		"TURN_ADVANCED",
 		"SEASON_ENDED",
@@ -30,9 +30,12 @@ func (e EventType) String() string {
 
 type Event interface {
 	EventType() EventType
-	apply(match *Match) (*Match, error)
+	apply(match *Match, metadata *MatchMetadata) (*Match, error)
 }
 
+// ================================================================
+// Match Created
+// ================================================================
 type EventMatchCreated struct {
 	MatchID MatchID
 }
@@ -41,11 +44,14 @@ func (e EventMatchCreated) EventType() EventType {
 	return EventTypeMatchCreated
 }
 
-func (e EventMatchCreated) apply(match *Match) (*Match, error) {
+func (e EventMatchCreated) apply(match *Match, _ *MatchMetadata) (*Match, error) {
 	match.State = MatchStateCreated
 	return match, nil
 }
 
+// ================================================================
+// Player Joined
+// ================================================================
 type EventPlayerJoined struct {
 	MatchID  MatchID
 	PlayerID PlayerID
@@ -55,15 +61,18 @@ func (e EventPlayerJoined) EventType() EventType {
 	return EventTypePlayerJoined
 }
 
-func (e EventPlayerJoined) apply(match *Match) (*Match, error) {
-	match.Seats = append(match.Seats, Seat{
-		SeatNumber: len(match.Seats),
-		PlayerID:   e.PlayerID,
-		Score:      0,
-	})
+func (e EventPlayerJoined) apply(match *Match, metadata *MatchMetadata) (*Match, error) {
+	board, err := GenerateNewBoard(metadata.BoardsSeed, len(match.Boards), e.PlayerID)
+	if err != nil {
+		return nil, err
+	}
+	match.Boards = append(match.Boards, *board)
 	return match, nil
 }
 
+// ================================================================
+// Game Started
+// ================================================================
 type EventGameStarted struct {
 	MatchID MatchID
 }
@@ -72,7 +81,19 @@ func (e EventGameStarted) EventType() EventType {
 	return EventTypeGameStarted
 }
 
-func (e EventGameStarted) apply(match *Match) (*Match, error) {
+func (e EventGameStarted) apply(match *Match, _ *MatchMetadata) (*Match, error) {
 	match.State = MatchStateStarted
 	return match, nil
+}
+
+// ================================================================
+// Card Opened
+// ================================================================
+type EventExploreCardOpened struct {
+	MatchID MatchID
+	CardID  ExploreCardID
+}
+
+func (e EventExploreCardOpened) EventType() EventType {
+	return EventTypeExploreCardOpened
 }

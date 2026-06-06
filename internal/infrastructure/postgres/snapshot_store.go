@@ -1,4 +1,4 @@
-package snapshotstore
+package postgres
 
 import (
 	"context"
@@ -8,18 +8,18 @@ import (
 	"youpiteron.dev/wildlands-backend/internal/domain"
 )
 
-type PostgresSnapshotStore struct {
+type SnapshotStore struct {
 	pool *pgxpool.Pool
 }
 
-var _ api.SnapshotStore = (*PostgresSnapshotStore)(nil)
+var _ api.SnapshotStore = (*SnapshotStore)(nil)
 
-func NewPostgresSnapshotStore(pool *pgxpool.Pool) *PostgresSnapshotStore {
-	return &PostgresSnapshotStore{pool: pool}
+func NewSnapshotStore(pool *pgxpool.Pool) *SnapshotStore {
+	return &SnapshotStore{pool: pool}
 }
 
-func (s *PostgresSnapshotStore) Save(ctx context.Context, snapshot *domain.Match) error {
-	storedMatch, err := ToStoredMatch(snapshot)
+func (s *SnapshotStore) Save(ctx context.Context, snapshot *domain.Match) error {
+	storedMatch, err := ToSnapshotRow(snapshot)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (s *PostgresSnapshotStore) Save(ctx context.Context, snapshot *domain.Match
 	return nil
 }
 
-func (s *PostgresSnapshotStore) Load(ctx context.Context, matchID domain.MatchID) (*domain.Match, error) {
+func (s *SnapshotStore) Load(ctx context.Context, matchID domain.MatchID) (*domain.Match, error) {
 	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
 		return nil, err
@@ -76,12 +76,12 @@ func (s *PostgresSnapshotStore) Load(ctx context.Context, matchID domain.MatchID
 	if !rows.Next() {
 		return nil, nil
 	}
-	var storedMatch StoredMatch
-	err = rows.Scan(&storedMatch.MatchID, &storedMatch.State, &storedMatch.CurrentTurn, &storedMatch.Version)
+	var snapshotRow SnapshotRow
+	err = rows.Scan(&snapshotRow.MatchID, &snapshotRow.State, &snapshotRow.CurrentTurn, &snapshotRow.Version)
 	if err != nil {
 		return nil, err
 	}
-	match, err := storedMatch.ToDomainMatch()
+	match, err := snapshotRow.ToDomainMatch()
 	if err != nil {
 		return nil, err
 	}
