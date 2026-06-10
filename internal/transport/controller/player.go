@@ -16,7 +16,7 @@ type Player struct {
 }
 
 func NewPlayer(playerService api.PlayerService, logger api.Logger) *Player {
-	return &Player{playerService: playerService, logger: logger}
+	return &Player{playerService: playerService, logger: logger.With(slog.String("tag", "PlayerController"))}
 }
 
 func (p *Player) CreatePlayer(w http.ResponseWriter, r *http.Request) {

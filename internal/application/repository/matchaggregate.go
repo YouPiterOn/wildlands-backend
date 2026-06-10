@@ -28,7 +28,7 @@ func NewMatchAggregate(
 		snapshotStore:      snapshotStore,
 		eventStore:         eventStore,
 		matchMetadataStore: matchMetadataStore,
-		logger:             logger,
+		logger:             logger.With(slog.String("tag", "MatchAggregateRepository")),
 	}
 }
 
@@ -40,7 +40,7 @@ func (r *MatchAggregate) Load(ctx context.Context, id domain.MatchID) (*domain.M
 
 	metadata, err := r.matchMetadataStore.GetByMatchID(ctx, id)
 	if err != nil {
-		r.logger.Error("error loading match metadata",
+		r.logger.Error(utils.ErrMatchMetadataLoad.Error(),
 			slog.String("match_id", id.String()),
 			slog.String("error", err.Error()))
 
@@ -49,7 +49,7 @@ func (r *MatchAggregate) Load(ctx context.Context, id domain.MatchID) (*domain.M
 
 	events, _, err := r.eventStore.LoadSince(ctx, id, match.Version)
 	if err != nil {
-		r.logger.Error("error loading events",
+		r.logger.Error(utils.ErrEventLoad.Error(),
 			slog.String("match_id", id.String()),
 			slog.Int("version", match.Version),
 			slog.String("error", err.Error()))
@@ -64,7 +64,7 @@ func (r *MatchAggregate) Load(ctx context.Context, id domain.MatchID) (*domain.M
 	for _, e := range events {
 		err := match.Apply(e, metadata)
 		if err != nil {
-			r.logger.Error("error applying event",
+			r.logger.Error(utils.ErrEventApply.Error(),
 				slog.String("match_id", id.String()),
 				slog.Int("version", match.Version),
 				slog.String("event_type", e.EventType().String()),

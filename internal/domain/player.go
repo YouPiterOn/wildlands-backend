@@ -16,6 +16,14 @@ func ParsePlayerID(s string) (PlayerID, error) {
 	return PlayerID(id), nil
 }
 
+func NewPlayerID() (PlayerID, error) {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return PlayerID{}, err
+	}
+	return PlayerID(id), nil
+}
+
 type Player struct {
 	ID   PlayerID
 	Name string
