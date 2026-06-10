@@ -15,6 +15,7 @@ var ErrMatchCreate = errors.New("error creating match")
 
 // Player errors
 var ErrPlayerCreate = errors.New("error creating player")
+var ErrPlayerNotFound = errors.New("player not found")
 
 // Match metadata errors
 var ErrMatchMetadataLoad = errors.New("error loading match metadata")

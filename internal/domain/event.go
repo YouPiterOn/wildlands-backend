@@ -3,8 +3,7 @@ package domain
 type EventType int
 
 const (
-	EventTypeMatchCreated EventType = iota
-	EventTypePlayerJoined
+	EventTypePlayerJoined EventType = iota
 	EventTypeGameStarted
 	EventTypeExploreCardOpened
 	EventTypeShapePlaced
@@ -16,7 +15,6 @@ const (
 
 func (e EventType) String() string {
 	return []string{
-		"MATCH_CREATED",
 		"PLAYER_JOINED",
 		"GAME_STARTED",
 		"EXPLORE_CARD_OPENED",
@@ -31,22 +29,6 @@ func (e EventType) String() string {
 type Event interface {
 	EventType() EventType
 	apply(match *Match, metadata *MatchMetadata) (*Match, error)
-}
-
-// ================================================================
-// Match Created
-// ================================================================
-type EventMatchCreated struct {
-	MatchID MatchID
-}
-
-func (e EventMatchCreated) EventType() EventType {
-	return EventTypeMatchCreated
-}
-
-func (e EventMatchCreated) apply(match *Match, _ *MatchMetadata) (*Match, error) {
-	match.State = MatchStateCreated
-	return match, nil
 }
 
 // ================================================================

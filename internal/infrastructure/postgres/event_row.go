@@ -35,15 +35,6 @@ func ToEventRow(event domain.Event, version int) (EventRow, error) {
 }
 
 var toDomainEventMapperRegistry = map[domain.EventType]func(EventRow) (domain.Event, error){
-	domain.EventTypeMatchCreated: func(storedEvent EventRow) (domain.Event, error) {
-		matchID, err := domain.ParseMatchID(storedEvent.MatchID)
-		if err != nil {
-			return nil, err
-		}
-		return &domain.EventMatchCreated{
-			MatchID: matchID,
-		}, nil
-	},
 	domain.EventTypePlayerJoined: func(storedEvent EventRow) (domain.Event, error) {
 		var event PlayerJoinedEventData
 		err := json.Unmarshal(storedEvent.Data, &event)
@@ -75,17 +66,6 @@ var toDomainEventMapperRegistry = map[domain.EventType]func(EventRow) (domain.Ev
 }
 
 var toStoredEventMapperRegistry = map[domain.EventType]func(domain.Event, int) (EventRow, error){
-	domain.EventTypeMatchCreated: func(event domain.Event, version int) (EventRow, error) {
-		domainEvent, ok := event.(*domain.EventMatchCreated)
-		if !ok {
-			return EventRow{}, errors.New("invalid domain event type")
-		}
-		return EventRow{
-			Type:    domainEvent.EventType(),
-			MatchID: domainEvent.MatchID.String(),
-			Version: version,
-		}, nil
-	},
 	domain.EventTypePlayerJoined: func(event domain.Event, version int) (EventRow, error) {
 		domainEvent, ok := event.(*domain.EventPlayerJoined)
 		if !ok {

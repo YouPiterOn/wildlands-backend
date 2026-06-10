@@ -5,8 +5,7 @@ import "errors"
 type CommandType string
 
 const (
-	CommandTypeCreateMatch CommandType = "CREATE_MATCH"
-	CommandTypeJoinMatch   CommandType = "JOIN_MATCH"
+	CommandTypeJoinMatch CommandType = "JOIN_MATCH"
 )
 
 func (c CommandType) String() string {
@@ -21,32 +20,6 @@ type Command interface {
 
 type CommandCreateMatch struct {
 	MatchID MatchID
-}
-
-func NewCommandCreateMatch(matchID MatchID) Command {
-	return CommandCreateMatch{
-		MatchID: matchID,
-	}
-}
-
-func (c CommandCreateMatch) Type() CommandType {
-	return CommandTypeCreateMatch
-}
-
-func (c CommandCreateMatch) GetMatchID() MatchID {
-	return c.MatchID
-}
-
-func (c CommandCreateMatch) Handle(match *Match) ([]Event, error) {
-	if match != nil {
-		return nil, errors.New("Match already created")
-	}
-	events := []Event{
-		EventMatchCreated{
-			MatchID: c.MatchID,
-		},
-	}
-	return events, nil
 }
 
 type CommandJoinMatch struct {

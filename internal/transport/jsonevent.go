@@ -14,15 +14,6 @@ type JsonEvent struct {
 
 func ToJsonEvent(event domain.Event) (JsonEvent, error) {
 	switch event.EventType() {
-	case domain.EventTypeMatchCreated:
-		domainEvent, ok := event.(*domain.EventMatchCreated)
-		if !ok {
-			return JsonEvent{}, errors.New("invalid event type")
-		}
-		return JsonEvent{
-			Type:    domain.EventTypeMatchCreated.String(),
-			MatchID: domainEvent.MatchID.String(),
-		}, nil
 	case domain.EventTypePlayerJoined:
 		domainEvent, ok := event.(*domain.EventPlayerJoined)
 		if !ok {

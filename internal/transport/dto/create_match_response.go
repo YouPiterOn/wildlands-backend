@@ -1,5 +1,7 @@
 package dto
 
+import "youpiteron.dev/wildlands-backend/internal/transport"
+
 type CreateMatchResponse struct {
-	MatchID string `json:"match_id"`
+	Match transport.JsonMatch `json:"match"`
 }

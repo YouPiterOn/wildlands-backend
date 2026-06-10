@@ -7,6 +7,7 @@ import (
 
 	"youpiteron.dev/wildlands-backend/internal/api"
 	"youpiteron.dev/wildlands-backend/internal/domain"
+	"youpiteron.dev/wildlands-backend/internal/transport"
 	"youpiteron.dev/wildlands-backend/internal/transport/dto"
 	"youpiteron.dev/wildlands-backend/internal/utils"
 )
@@ -36,19 +37,19 @@ func (c *Match) CreateMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	matchID, err := c.matchService.CreateMatch(r.Context(), playerID)
+	match, err := c.matchService.CreateMatch(r.Context(), playerID)
 	if err != nil {
 		http.Error(w, utils.ErrMatchCreate.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	response := dto.CreateMatchResponse{
-		MatchID: matchID.String(),
+		Match: transport.ToJsonMatch(match),
 	}
 
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		c.logger.Error(utils.ErrResponseEncode.Error(), slog.String("match_id", matchID.String()), slog.String("error", err.Error()))
+		c.logger.Error(utils.ErrResponseEncode.Error(), slog.String("error", err.Error()))
 		http.Error(w, utils.ErrResponseEncode.Error(), http.StatusInternalServerError)
 		return
 	}

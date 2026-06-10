@@ -43,6 +43,18 @@ func (t Terrain) Icon() string {
 	}[t]
 }
 
+func (t Terrain) String() string {
+	return []string{
+		"TERRAIN_EMPTY",
+		"TERRAIN_MOUNTAIN",
+		"TERRAIN_MONSTER",
+		"TERRAIN_FOREST",
+		"TERRAIN_VILLAGE",
+		"TERRAIN_FARM",
+		"TERRAIN_WATER",
+	}[t]
+}
+
 type Cell struct {
 	Terrain  Terrain
 	HasRuins bool
@@ -71,11 +83,11 @@ type Placement struct {
 }
 
 type Board struct {
-	BoardNumber int      `json:"board_number"`
-	PlayerID    PlayerID `json:"player_id"`
-	Cells       [][]Cell `json:"cells"`
-	Score       int      `json:"score"`
-	Coins       int      `json:"coins"`
+	BoardNumber int
+	PlayerID    PlayerID
+	Cells       [][]Cell
+	Score       int
+	Coins       int
 }
 
 func GenerateNewBoard(seed int64, boardNumber int, playerID PlayerID) (*Board, error) {

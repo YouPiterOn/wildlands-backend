@@ -9,15 +9,6 @@ import (
 func ParseCommand(command JsonCommand) (domain.Command, error) {
 	switch domain.CommandType(command.Type) {
 
-	case domain.CommandTypeCreateMatch:
-		id, err := domain.ParseMatchID(command.MatchID)
-		if err != nil {
-			return nil, err
-		}
-		return domain.CommandCreateMatch{
-			MatchID: id,
-		}, nil
-
 	case domain.CommandTypeJoinMatch:
 		matchID, err := domain.ParseMatchID(command.MatchID)
 		if err != nil {
