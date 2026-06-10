@@ -28,3 +28,7 @@ func (l *ConsoleLogger) Warn(message string, args ...any) {
 func (l *ConsoleLogger) Error(message string, args ...any) {
 	l.logger.Error(message, args...)
 }
+
+func (l *ConsoleLogger) With(args ...any) api.Logger {
+	return &ConsoleLogger{logger: l.logger.With(args...)}
+}

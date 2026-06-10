@@ -17,6 +17,8 @@ type Match struct {
 	logger                   api.Logger
 }
 
+var _ api.MatchService = (*Match)(nil)
+
 func NewMatch(
 	eventStore api.EventStore,
 	matchMetadataStore api.MatchMetadataStore,
@@ -27,21 +29,21 @@ func NewMatch(
 		eventStore:               eventStore,
 		matchMetadataStore:       matchMetadataStore,
 		matchAggregateRepository: matchAggregateRepository,
-		logger:                   logger,
+		logger:                   logger.With(slog.String("tag", "MatchService")),
 	}
 }
 
-func (m *Match) CreateMatch(ctx context.Context) (domain.MatchID, error) {
+func (m *Match) CreateMatch(ctx context.Context, playerID domain.PlayerID) (domain.MatchID, error) {
 	metadata, err := m.generateMatchMetadata()
 	if err != nil {
-		m.logger.Error("error generating match metadata",
+		m.logger.Error(utils.ErrMatchMetadataGenerate.Error(),
 			slog.String("error", err.Error()))
 
 		return domain.MatchID{}, utils.ErrMatchMetadataGenerate
 	}
 	err = m.matchMetadataStore.Create(ctx, metadata)
 	if err != nil {
-		m.logger.Error("error creating match metadata",
+		m.logger.Error(utils.ErrMatchMetadataCreate.Error(),
 			slog.String("match_id", metadata.MatchID.String()),
 			slog.Int64("boards_seed", metadata.BoardsSeed),
 			slog.Int64("explore_deck_seed", metadata.ExploreDeckSeed),
@@ -54,6 +56,10 @@ func (m *Match) CreateMatch(ctx context.Context) (domain.MatchID, error) {
 	return metadata.MatchID, nil
 }
 
+func (m *Match) JoinMatch(ctx context.Context, matchID domain.MatchID, playerID domain.PlayerID) error {
+	return nil
+}
+
 func (m *Match) HandleCommand(ctx context.Context, command domain.Command) ([]domain.Event, error) {
 	match, err := m.matchAggregateRepository.Load(ctx, command.GetMatchID())
 	if err != nil {
@@ -62,7 +68,7 @@ func (m *Match) HandleCommand(ctx context.Context, command domain.Command) ([]do
 
 	events, err := command.Handle(match)
 	if err != nil {
-		m.logger.Error("error handling command",
+		m.logger.Error(utils.ErrCommandHandle.Error(),
 			slog.String("match_id", command.GetMatchID().String()),
 			slog.Int("version", match.Version),
 			slog.String("command_type", command.Type().String()),
@@ -73,7 +79,7 @@ func (m *Match) HandleCommand(ctx context.Context, command domain.Command) ([]do
 
 	err = m.eventStore.Append(ctx, match.ID, match.Version, events)
 	if err != nil {
-		m.logger.Error("error appending events",
+		m.logger.Error(utils.ErrEventAppend.Error(),
 			slog.String("match_id", match.ID.String()),
 			slog.Int("version", match.Version),
 			slog.String("error", err.Error()))
