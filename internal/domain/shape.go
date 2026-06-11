@@ -70,23 +70,45 @@ func (s *Shape) String() string {
 	return builder.String()
 }
 
-func ShapeSquare1() *Shape {
+func ShapeSquare1x1() *Shape {
 	return NewShape([][]bool{
 		{true},
 	})
 }
 
-func ShapeSquare2() *Shape {
+func ShapeSquare2x2() *Shape {
 	return NewShape([][]bool{
 		{true, true},
 		{true, true},
 	})
 }
 
-func ShapeDiagonal3() *Shape {
+func ShapeDiagonal2x2() *Shape {
+	return NewShape([][]bool{
+		{true, false},
+		{false, true},
+	})
+}
+
+func ShapeDiagonal3x3() *Shape {
 	return NewShape([][]bool{
 		{true, false, false},
 		{false, true, false},
 		{false, false, true},
+	})
+}
+
+func ShapeZigzag2x3() *Shape {
+	return NewShape([][]bool{
+		{true, false},
+		{true, true},
+		{false, true},
+	})
+}
+
+func ShapeZigzag4x2() *Shape {
+	return NewShape([][]bool{
+		{false, false, true, true},
+		{true, true, true, false},
 	})
 }

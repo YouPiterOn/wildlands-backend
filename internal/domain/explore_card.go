@@ -1,41 +1,56 @@
 package domain
 
-import "github.com/google/uuid"
-
-type ExploreCardOption struct {
-	Shape   *Shape
-	Terrain Terrain
-	Coins   int
+type ExploreCardShapeOption struct {
+	Shape *Shape
+	Coins int
 }
 
-func NewExploreCardOption(shape *Shape, terrain Terrain, coins int) ExploreCardOption {
-	return ExploreCardOption{
-		Shape:   shape,
-		Terrain: terrain,
-		Coins:   coins,
+func NewExploreCardShapeOption(shape *Shape, coins int) ExploreCardShapeOption {
+	return ExploreCardShapeOption{
+		Shape: shape,
+		Coins: coins,
 	}
 }
 
-type ExploreCardID uuid.UUID
+type ExploreCardName string
+
+const (
+	ExploreCardNameForgottenForest ExploreCardName = "FORGOTTEN_FOREST"
+	ExploreCardNameForestHouses    ExploreCardName = "FOREST_HOUSES"
+)
 
 type ExploreCard struct {
-	ID      ExploreCardID
-	Options []ExploreCardOption
-	IsRuins bool
+	Name           ExploreCardName
+	Duration       int
+	TerrainOptions []Terrain
+	ShapeOptions   []ExploreCardShapeOption
 }
 
-func NewExploreCard(id ExploreCardID, options []ExploreCardOption) *ExploreCard {
-	return &ExploreCard{
-		ID:      id,
-		Options: options,
-		IsRuins: false,
+func NewExploreCard(name ExploreCardName, duration int, terrainOptions []Terrain, shapeOptions []ExploreCardShapeOption) ExploreCard {
+	return ExploreCard{
+		Name:           name,
+		Duration:       duration,
+		TerrainOptions: terrainOptions,
+		ShapeOptions:   shapeOptions,
 	}
 }
 
-func NewRuinsExploreCard(id ExploreCardID) *ExploreCard {
-	return &ExploreCard{
-		ID:      id,
-		Options: []ExploreCardOption{},
-		IsRuins: true,
-	}
+var ExploreCards = []ExploreCard{
+	NewExploreCard(
+		ExploreCardNameForgottenForest,
+		1,
+		[]Terrain{TerrainForest},
+		[]ExploreCardShapeOption{
+			NewExploreCardShapeOption(ShapeDiagonal2x2(), 1),
+			NewExploreCardShapeOption(ShapeZigzag2x3(), 0),
+		},
+	),
+	NewExploreCard(
+		ExploreCardNameForestHouses,
+		2,
+		[]Terrain{TerrainForest, TerrainVillage},
+		[]ExploreCardShapeOption{
+			NewExploreCardShapeOption(ShapeZigzag4x2(), 0),
+		},
+	),
 }

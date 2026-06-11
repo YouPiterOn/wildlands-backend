@@ -2,35 +2,67 @@ package domain
 
 import "math/rand"
 
-type ExploreDeck struct {
-	Cards       []ExploreCard
-	ShuffleSeed int64
+type ExploreDeckCard struct {
+	Card    ExploreCard
+	IsRuins bool
 }
 
-func NewShuffledDeck(cards []ExploreCard, seed int64) *ExploreDeck {
-	deck := &ExploreDeck{
-		Cards:       cards,
-		ShuffleSeed: seed,
+func toDeckCards(exploreCards []ExploreCard) []ExploreDeckCard {
+	deckCards := make([]ExploreDeckCard, 0, len(exploreCards))
+	for _, card := range exploreCards {
+		deckCards = append(deckCards, ExploreDeckCard{
+			Card:    card,
+			IsRuins: false,
+		})
 	}
-	deck.Shuffle()
+	return deckCards
+}
+
+type ExploreDeck struct {
+	cards       []ExploreDeckCard
+	rng         *rand.Rand
+	ruinsNumber int
+}
+
+func NewShuffledDeck(cards []ExploreCard, ruinsNumber int, seed int64) *ExploreDeck {
+	deck := &ExploreDeck{
+		cards:       toDeckCards(cards),
+		rng:         rand.New(rand.NewSource(seed)),
+		ruinsNumber: ruinsNumber,
+	}
+	deck.shuffle()
+	deck.resetRuinsAndShuffle()
 	return deck
 }
 
-func (d *ExploreDeck) DrawCard() *ExploreCard {
-	card := d.Cards[0]
-	d.Cards = d.Cards[1:]
+func (d *ExploreDeck) DrawCard() *ExploreDeckCard {
+	card := d.cards[0]
+	d.cards = d.cards[1:]
+	if card.IsRuins && d.ruinsNumber > 0 {
+		d.ruinsNumber--
+	}
 	return &card
 }
 
 func (d *ExploreDeck) AddCardsAndShuffle(cards []ExploreCard, seed int64) {
-	d.Cards = append(d.Cards, cards...)
-	d.Shuffle()
+	deckCards := toDeckCards(cards)
+	d.cards = append(d.cards, deckCards...)
+	d.resetRuinsAndShuffle()
 }
 
-func (d *ExploreDeck) Shuffle() {
-	rng := rand.New(rand.NewSource(d.ShuffleSeed))
-	for i := range d.Cards {
-		j := rng.Intn(i + 1)
-		d.Cards[i], d.Cards[j] = d.Cards[j], d.Cards[i]
+func (d *ExploreDeck) shuffle() {
+	d.rng.Shuffle(len(d.cards), func(i, j int) {
+		d.cards[i], d.cards[j] = d.cards[j], d.cards[i]
+	})
+}
+
+func (d *ExploreDeck) resetRuinsAndShuffle() {
+	for i := 0; i < len(d.cards); i++ {
+		if i < d.ruinsNumber {
+			d.cards[i].IsRuins = true
+		} else {
+			d.cards[i].IsRuins = false
+		}
 	}
+	d.shuffle()
 }

@@ -57,30 +57,33 @@ func ParseMatchState(s string) (MatchState, error) {
 }
 
 type Match struct {
-	ID          MatchID
-	State       MatchState
-	Boards      []Board
-	CurrentTurn int
-	Version     int
+	ID                 MatchID
+	State              MatchState
+	Boards             []Board
+	CurrentExploreCard *ExploreDeckCard
+	CurrentTurn        int
+	Version            int
 }
 
 func NewMatch(id MatchID) *Match {
 	return &Match{
-		ID:          id,
-		State:       MatchStateCreated,
-		Boards:      []Board{},
-		CurrentTurn: 0,
-		Version:     0,
+		ID:                 id,
+		State:              MatchStateCreated,
+		Boards:             []Board{},
+		CurrentExploreCard: nil,
+		CurrentTurn:        0,
+		Version:            0,
 	}
 }
 
 func (m *Match) Clone() *Match {
 	return &Match{
-		ID:          m.ID,
-		State:       m.State,
-		Boards:      m.Boards,
-		CurrentTurn: m.CurrentTurn,
-		Version:     m.Version,
+		ID:                 m.ID,
+		State:              m.State,
+		Boards:             m.Boards,
+		CurrentExploreCard: m.CurrentExploreCard,
+		CurrentTurn:        m.CurrentTurn,
+		Version:            m.Version,
 	}
 }
 

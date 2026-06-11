@@ -73,9 +73,15 @@ func (e EventGameStarted) apply(match *Match, _ *MatchMetadata) (*Match, error) 
 // ================================================================
 type EventExploreCardOpened struct {
 	MatchID MatchID
-	CardID  ExploreCardID
+	Card    ExploreCard
+	IsRuins bool
 }
 
 func (e EventExploreCardOpened) EventType() EventType {
 	return EventTypeExploreCardOpened
+}
+
+func (e EventExploreCardOpened) apply(match *Match, _ *MatchMetadata) (*Match, error) {
+	card := match.ExploreDeck.DrawCard()
+	return match, nil
 }
