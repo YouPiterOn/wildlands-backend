@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"youpiteron.dev/wildlands-backend/internal/api"
-	"youpiteron.dev/wildlands-backend/internal/transport/dto"
+	"youpiteron.dev/wildlands-backend/internal/transport/serializable"
 	"youpiteron.dev/wildlands-backend/internal/utils"
 )
 
@@ -20,7 +20,7 @@ func NewPlayer(playerService api.PlayerService, logger api.Logger) *Player {
 }
 
 func (p *Player) CreatePlayer(w http.ResponseWriter, r *http.Request) {
-	var createPlayer dto.CreatePlayerRequest
+	var createPlayer serializable.CreatePlayerRequest
 	err := json.NewDecoder(r.Body).Decode(&createPlayer)
 	if err != nil {
 		p.logger.Error(utils.ErrRequestDecode.Error(), slog.String("error", err.Error()))
@@ -37,7 +37,7 @@ func (p *Player) CreatePlayer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	response := dto.CreatePlayerResponse{
+	response := serializable.CreatePlayerResponse{
 		Name:     player.Name,
 		PlayerID: player.ID.String(),
 	}

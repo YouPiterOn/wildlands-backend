@@ -7,8 +7,7 @@ import (
 
 	"youpiteron.dev/wildlands-backend/internal/api"
 	"youpiteron.dev/wildlands-backend/internal/domain"
-	"youpiteron.dev/wildlands-backend/internal/transport"
-	"youpiteron.dev/wildlands-backend/internal/transport/dto"
+	"youpiteron.dev/wildlands-backend/internal/transport/serializable"
 	"youpiteron.dev/wildlands-backend/internal/utils"
 )
 
@@ -22,7 +21,7 @@ func NewMatch(matchService api.MatchService, logger api.Logger) *Match {
 }
 
 func (c *Match) CreateMatch(w http.ResponseWriter, r *http.Request) {
-	var createMatchRequest dto.CreateMatchRequest
+	var createMatchRequest serializable.CreateMatchRequest
 	err := json.NewDecoder(r.Body).Decode(&createMatchRequest)
 	if err != nil {
 		c.logger.Error(utils.ErrRequestDecode.Error(), slog.String("error", err.Error()))
@@ -44,8 +43,8 @@ func (c *Match) CreateMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dto.CreateMatchResponse{
-		Match: transport.ToJsonMatch(match),
+	response := serializable.CreateMatchResponse{
+		Match: serializable.ToJsonMatch(match),
 	}
 
 	err = json.NewEncoder(w).Encode(response)
@@ -58,7 +57,7 @@ func (c *Match) CreateMatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Match) JoinMatch(w http.ResponseWriter, r *http.Request) {
-	var joinMatchRequest dto.JoinMatchRequest
+	var joinMatchRequest serializable.JoinMatchRequest
 	err := json.NewDecoder(r.Body).Decode(&joinMatchRequest)
 	if err != nil {
 		c.logger.Error(utils.ErrRequestDecode.Error(), slog.String("error", err.Error()))
@@ -88,8 +87,8 @@ func (c *Match) JoinMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dto.JoinMatchResponse{
-		Match: transport.ToJsonMatch(match),
+	response := serializable.JoinMatchResponse{
+		Match: serializable.ToJsonMatch(match),
 	}
 
 	err = json.NewEncoder(w).Encode(response)

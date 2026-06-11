@@ -1,4 +1,4 @@
-package transport
+package serializable
 
 import "youpiteron.dev/wildlands-backend/internal/domain"
 

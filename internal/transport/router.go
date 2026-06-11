@@ -3,20 +3,19 @@ package transport
 import (
 	"net/http"
 
-	"github.com/coder/websocket"
+	"youpiteron.dev/wildlands-backend/internal/transport/controller"
 )
 
-func NewRouter(wsHandler *WSHandler) http.Handler {
+func NewRouter(
+	matchController *controller.Match,
+	playerController *controller.Player,
+	wsController *controller.WS,
+) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		conn, err := websocket.Accept(w, r, nil)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		wsHandler.HandleConnection(r.Context(), conn)
-		conn.Close(websocket.StatusNormalClosure, "OK")
-	})
+	mux.HandleFunc("/ws", wsController.WsHandler)
+	mux.HandleFunc("/match/create", matchController.CreateMatch)
+	mux.HandleFunc("/match/join", matchController.JoinMatch)
+	mux.HandleFunc("/player/create", playerController.CreatePlayer)
 
 	return mux
 }

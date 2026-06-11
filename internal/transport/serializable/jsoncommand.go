@@ -1,4 +1,4 @@
-package transport
+package serializable
 
 import (
 	"errors"
@@ -6,7 +6,13 @@ import (
 	"youpiteron.dev/wildlands-backend/internal/domain"
 )
 
-func ParseCommand(command JsonCommand) (domain.Command, error) {
+type JsonCommand struct {
+	Type     string `json:"type"`
+	MatchID  string `json:"match_id,omitempty"`
+	PlayerID string `json:"player_id,omitempty"`
+}
+
+func ToDomainCommand(command JsonCommand) (domain.Command, error) {
 	switch domain.CommandType(command.Type) {
 
 	case domain.CommandTypeJoinMatch:
