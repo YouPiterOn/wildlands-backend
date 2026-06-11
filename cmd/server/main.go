@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -11,6 +12,7 @@ import (
 	"youpiteron.dev/wildlands-backend/internal/infrastructure"
 	"youpiteron.dev/wildlands-backend/internal/infrastructure/postgres"
 	"youpiteron.dev/wildlands-backend/internal/transport"
+	"youpiteron.dev/wildlands-backend/internal/transport/controller"
 )
 
 const PORT = ":8080"
@@ -32,14 +34,25 @@ func main() {
 	eventStore := postgres.NewEventStore(pool)
 	snapshotStore := postgres.NewSnapshotStore(pool)
 	matchMetadataStore := postgres.NewMatchMetadataStore(pool)
+	playerStore := postgres.NewPlayerStore(pool)
 
 	matchRepository := repository.NewMatchAggregate(snapshotStore, eventStore, matchMetadataStore, logger)
-	matchService := service.NewMatch(eventStore, matchMetadataStore, matchRepository, logger)
+	matchService := service.NewMatch(
+		eventStore,
+		matchMetadataStore,
+		playerStore,
+		matchRepository,
+		logger,
+	)
+	playerService := service.NewPlayer(playerStore, logger)
 
-	wsHandler := transport.NewWSHandler(matchService)
-	router := transport.NewRouter(wsHandler)
+	matchController := controller.NewMatch(matchService, logger)
+	playerController := controller.NewPlayer(playerService, logger)
+	wsController := controller.NewWS(matchService, logger)
 
-	logger.Info("Starting server on port http://localhost%s", PORT)
+	router := transport.NewRouter(matchController, playerController, wsController)
+
+	logger.Info(fmt.Sprintf("Starting server on port http://localhost%s", PORT))
 	err = http.ListenAndServe(PORT, router)
 	if err != nil {
 		logger.Error("Failed to start server", slog.String("error", err.Error()))

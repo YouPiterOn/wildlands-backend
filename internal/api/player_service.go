@@ -7,6 +7,6 @@ import (
 )
 
 type PlayerService interface {
-	Create(ctx context.Context, name string) (domain.Player, error)
+	Create(ctx context.Context, name string) (*domain.Player, error)
 	GetByID(ctx context.Context, id domain.PlayerID) (*domain.Player, error)
 }
