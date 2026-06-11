@@ -12,6 +12,7 @@ var ErrCommandHandle = errors.New("error handling command")
 
 // Match errors
 var ErrMatchCreate = errors.New("error creating match")
+var ErrMatchJoin = errors.New("error joining match")
 
 // Player errors
 var ErrPlayerCreate = errors.New("error creating player")
@@ -25,4 +26,7 @@ var ErrMatchMetadataGenerate = errors.New("error generating match metadata")
 // Transport errors
 var ErrRequestDecode = errors.New("error decoding request")
 var ErrResponseEncode = errors.New("error encoding response")
-var ErrUUIDParse = errors.New("error parsing UUID")
+
+func CustomErrUUIDParse(name string, id string) error {
+	return errors.New("error parsing " + name + " UUID: " + id)
+}

@@ -32,8 +32,9 @@ func (c *Match) CreateMatch(w http.ResponseWriter, r *http.Request) {
 
 	playerID, err := domain.ParsePlayerID(createMatchRequest.PlayerID)
 	if err != nil {
-		c.logger.Error(utils.ErrUUIDParse.Error(), slog.String("player_id", createMatchRequest.PlayerID), slog.String("error", err.Error()))
-		http.Error(w, utils.ErrUUIDParse.Error(), http.StatusBadRequest)
+		publicErr := utils.CustomErrUUIDParse("player_id", createMatchRequest.PlayerID)
+		c.logger.Error(publicErr.Error(), slog.String("player_id", createMatchRequest.PlayerID), slog.String("error", err.Error()))
+		http.Error(w, publicErr.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -54,4 +55,48 @@ func (c *Match) CreateMatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (c *Match) JoinMatch(w http.ResponseWriter, r *http.Request) {
+	var joinMatchRequest dto.JoinMatchRequest
+	err := json.NewDecoder(r.Body).Decode(&joinMatchRequest)
+	if err != nil {
+		c.logger.Error(utils.ErrRequestDecode.Error(), slog.String("error", err.Error()))
+		http.Error(w, utils.ErrRequestDecode.Error(), http.StatusBadRequest)
+		return
+	}
+
+	playerID, err := domain.ParsePlayerID(joinMatchRequest.PlayerID)
+	if err != nil {
+		publicErr := utils.CustomErrUUIDParse("player_id", joinMatchRequest.PlayerID)
+		c.logger.Error(publicErr.Error(), slog.String("player_id", joinMatchRequest.PlayerID), slog.String("error", err.Error()))
+		http.Error(w, publicErr.Error(), http.StatusBadRequest)
+		return
+	}
+
+	matchID, err := domain.ParseMatchID(joinMatchRequest.MatchID)
+	if err != nil {
+		publicErr := utils.CustomErrUUIDParse("match_id", joinMatchRequest.MatchID)
+		c.logger.Error(publicErr.Error(), slog.String("match_id", joinMatchRequest.MatchID), slog.String("error", err.Error()))
+		http.Error(w, publicErr.Error(), http.StatusBadRequest)
+		return
+	}
+
+	match, err := c.matchService.JoinMatch(r.Context(), matchID, playerID)
+	if err != nil {
+		http.Error(w, utils.ErrMatchJoin.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := dto.JoinMatchResponse{
+		Match: transport.ToJsonMatch(match),
+	}
+
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		c.logger.Error(utils.ErrResponseEncode.Error(), slog.String("error", err.Error()))
+		http.Error(w, utils.ErrResponseEncode.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
